@@ -358,6 +358,14 @@ impl<T: Send> Sender<T> {
     }
 
     /// Fires closing channel notification.
+    ///
+    /// After closed, all [`send`] and [`recv`] operations will be failed.
+    ///
+    /// Uses [`try_recv`] to read remaining messages.
+    ///
+    /// [`send`]: Sender::send
+    /// [`recv`]: Receiver::recv
+    /// [`try_recv`]: Receiver::try_recv
     #[inline]
     pub fn close(&self) {
         unsafe { (*self.inner.get()).close() }
@@ -465,6 +473,14 @@ impl<T: Send> Receiver<T> {
     }
 
     /// Fires closing channel notification.
+    ///
+    /// After closed, all [`send`] and [`recv`] operations will be failed.
+    ///
+    /// Uses [`try_recv`] to read remaining messages.
+    ///
+    /// [`send`]: Sender::send
+    /// [`recv`]: Receiver::recv
+    /// [`try_recv`]: Receiver::try_recv
     #[inline]
     pub fn close(&self) {
         unsafe { (*self.inner.get()).close() }
