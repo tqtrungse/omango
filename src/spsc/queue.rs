@@ -156,7 +156,7 @@ impl<T> Spsc<T> {
 
     /// Sends blocking a message.
     ///
-    /// Returns `Disconnected` error,
+    /// Returns `Disconnected` error.
     pub(crate) fn send(&mut self, msg: T) -> Result<(), SendError<T>> {
         let selector = &mut Selector::default();
         loop {
@@ -186,7 +186,7 @@ impl<T> Spsc<T> {
 
     /// Receives blocking a message.
     ///
-    /// Returns `Disconnected` error,
+    /// Returns `Disconnected` error.
     pub(crate) fn recv(&mut self) -> Result<T, RecvError> {
         let selector = &mut Selector::default();
         loop {
