@@ -8,6 +8,7 @@
   <a href="https://github.com/tqtrungse/omango/actions/workflows/rust.yml"><img src="https://github.com/tqtrungse/omango/actions/workflows/rust.yml/badge.svg?branch=master" alt="Rust"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
   <a href="https://github.com/tqtrungse/omango"><img src="https://img.shields.io/github/v/release/tqtrungse/omango" alt="Release"></a>
+  <a href="https://crates.io/crates/omango"><img src="https://img.shields.io/crates/v/omango.svg" alt="Cargo"></a>
   <a href="https://www.rust-lang.org"><img src="https://img.shields.io/badge/rust-1.49+-lightgray.svg" alt="Rust 1.49+"></a>
 </p>
 <br/>
@@ -51,7 +52,7 @@ Both `SPSC` and `MPMC` channel can be used as queues.<br />
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-omango = "0.1.0"
+omango = "0.1.2"
 ```
 
 ## Compatibility
@@ -67,10 +68,10 @@ license. See [LICENSE](LICENSE) for more information.
 
 This product includes copies and modifications of software developed by third parties:
 
-* [src/backoff.rs](src/backoff.rs) includes copies and modifications of code from original file,
+* [src/backoff.rs](src/backoff.rs) includes copies and modifications of code from Crossbeam-Utils,
   licensed under the MIT License and the Apache License, Version 2.0.
 
-* [src/cache_padded.rs](src/cache_padded.rs) includes copies and modifications of code from original file,
+* [src/cache_padded.rs](src/cache_padded.rs) includes copies and modifications of code from Crossbeam-Utils,
   licensed under the MIT License and the Apache License, Version 2.0.
 
 See the source code files for more details.
