@@ -7,6 +7,7 @@
 <p align="center">
   <a href="https://github.com/tqtrungse/mango/actions/workflows/rust.yml"><img src="https://github.com/tqtrungse/mango/actions/workflows/rust.yml/badge.svg?branch=master" alt="Rust"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://github.com/tqtrungse/mango"><img src="https://img.shields.io/github/v/release/tqtrungse/mango" alt="Release"></a>
   <a href="https://www.rust-lang.org"><img src="https://img.shields.io/badge/rust-1.49+-lightgray.svg" alt="Rust 1.49+"></a>
 </p>
 <br/>
