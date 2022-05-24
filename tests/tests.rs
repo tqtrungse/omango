@@ -28,25 +28,25 @@ fn is_send<T: Send>() {}
 #[test]
 fn bounds() {
     // SPSC
-    is_send::<mango::spsc::Sender<i32>>();
-    is_send::<mango::spsc::Receiver<i32>>();
+    is_send::<omango::spsc::Sender<i32>>();
+    is_send::<omango::spsc::Receiver<i32>>();
 
     // MPMC
-    is_send::<mango::mpmc::Sender<i32>>();
-    is_send::<mango::mpmc::Receiver<i32>>();
+    is_send::<omango::mpmc::Sender<i32>>();
+    is_send::<omango::mpmc::Receiver<i32>>();
 }
 
 #[test]
 fn send_recv() {
     // SPSC
     {
-        let (tx, rx) = mango::spsc::bounded(4);
+        let (tx, rx) = omango::spsc::bounded(4);
         tx.send(1).unwrap();
         assert_eq!(rx.recv().unwrap(), 1);
     }
 
     // MPMC
-    let (tx, rx) = mango::mpmc::bounded(4);
+    let (tx, rx) = omango::mpmc::bounded(4);
     tx.send(1).unwrap();
     assert_eq!(rx.recv().unwrap(), 1);
 }
@@ -55,7 +55,7 @@ fn send_recv() {
 fn send_shared_recv() {
     // SPSC
     {
-        let (tx1, rx) = mango::spsc::bounded(4);
+        let (tx1, rx) = omango::spsc::bounded(4);
         let tx2 = tx1.clone();
 
         tx1.send(1).unwrap();
@@ -66,7 +66,7 @@ fn send_shared_recv() {
     }
 
     // MPMC
-    let (tx1, rx) = mango::mpmc::bounded(4);
+    let (tx1, rx) = omango::mpmc::bounded(4);
     let tx2 = tx1.clone();
 
     tx1.send(1).unwrap();
@@ -80,7 +80,7 @@ fn send_shared_recv() {
 fn send_recv_threads() {
     // SPSC
     {
-        let (tx, rx) = mango::spsc::bounded(4);
+        let (tx, rx) = omango::spsc::bounded(4);
         let thread = thread::spawn(move || {
             tx.send(1).unwrap();
         });
@@ -89,7 +89,7 @@ fn send_recv_threads() {
     }
 
     // MPMC
-    let (tx, rx) = mango::mpmc::bounded(4);
+    let (tx, rx) = omango::mpmc::bounded(4);
     let thread = thread::spawn(move || {
         tx.send(1).unwrap();
     });
@@ -101,7 +101,7 @@ fn send_recv_threads() {
 fn send_recv_threads_no_capacity() {
     // SPSC
     {
-        let (tx, rx) = mango::spsc::bounded(0);
+        let (tx, rx) = omango::spsc::bounded(0);
         let thread = thread::spawn(move || {
             tx.send(1).unwrap();
             tx.send(2).unwrap();
@@ -117,7 +117,7 @@ fn send_recv_threads_no_capacity() {
     }
 
     // MPMC
-    let (tx, rx) = mango::mpmc::bounded(0);
+    let (tx, rx) = omango::mpmc::bounded(0);
     let thread = thread::spawn(move || {
         tx.send(1).unwrap();
         tx.send(2).unwrap();
@@ -136,7 +136,7 @@ fn send_recv_threads_no_capacity() {
 fn send_close_gets_none() {
     // SPSC
     {
-        let (tx, rx) = mango::spsc::bounded::<i32>(0);
+        let (tx, rx) = omango::spsc::bounded::<i32>(0);
         let thread = thread::spawn(move || {
             assert!(rx.recv().is_err());
         });
@@ -145,7 +145,7 @@ fn send_close_gets_none() {
     }
 
     // MPMC
-    let (tx, rx) = mango::mpmc::bounded::<i32>(0);
+    let (tx, rx) = omango::mpmc::bounded::<i32>(0);
     let thread = thread::spawn(move || {
         assert!(rx.recv().is_err());
     });
@@ -156,7 +156,7 @@ fn send_close_gets_none() {
 #[test]
 fn spsc_no_capacity() {
     let amt = 10000;
-    let (tx, rx) = mango::spsc::bounded(0);
+    let (tx, rx) = omango::spsc::bounded(0);
 
     let txc = tx.clone();
     thread::spawn(move || {
@@ -173,7 +173,7 @@ fn spsc_no_capacity() {
 fn mpsc_no_capacity() {
     let amt = 10000;
     let nthreads = (2 * num_cpus::get()) - 1;
-    let (tx, rx) = mango::mpmc::bounded(0);
+    let (tx, rx) = omango::mpmc::bounded(0);
 
     for _ in 0..nthreads {
         let txc = tx.clone();
@@ -193,7 +193,7 @@ fn mpmc_no_capacity() {
     let amt = 10000;
     let nthreads_send = num_cpus::get() - 1;
     let nthreads_recv = num_cpus::get() - 1;
-    let (tx, rx) = mango::mpmc::bounded(0);
+    let (tx, rx) = omango::mpmc::bounded(0);
     let mut receiving_threads = Vec::new();
     let mut sending_threads = Vec::new();
 

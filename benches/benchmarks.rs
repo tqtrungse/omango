@@ -2,7 +2,7 @@ use std::thread;
 use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId};
 
 fn my_spsc() {
-    let (tx, rx) = mango::spsc::bounded(1024);
+    let (tx, rx) = omango::spsc::bounded(1024);
     let thread = thread::spawn(move|| {
         for _ in 0..2000 {
             assert_eq!(tx.send(1), Ok(()));
@@ -15,7 +15,7 @@ fn my_spsc() {
 }
 
 fn my_mpsc() {
-    let (tx, rx) = mango::mpmc::bounded(1024);
+    let (tx, rx) = omango::mpmc::bounded(1024);
     let nthreads = (2 * num_cpus::get()) - 1;
     let mut sending_threads = Vec::new();
 
@@ -37,7 +37,7 @@ fn my_mpsc() {
 }
 
 fn my_mpmc() {
-    let (tx, rx) = mango::mpmc::bounded(1024);
+    let (tx, rx) = omango::mpmc::bounded(1024);
     let nthreads = num_cpus::get() - 1;
     let mut sending_threads = Vec::new();
     let mut receiving_threads = Vec::new();

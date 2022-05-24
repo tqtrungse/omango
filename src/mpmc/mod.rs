@@ -27,7 +27,7 @@
 //! # Hello, world!
 //!
 //! ```
-//! use mango::mpmc::bounded;
+//! use omango::mpmc::bounded;
 //!
 //! // Create a channel of unbounded capacity.
 //! let (tx, rx) = bounded(1);
@@ -50,7 +50,7 @@
 //! of a channel.
 //!
 //! ```
-//! use mango::mpmc::bounded;
+//! use omango::mpmc::bounded;
 //!
 //! // Create a channel that can hold at most 5 messages at a time.
 //! let (tx, rx) = bounded(5);
@@ -69,7 +69,7 @@
 //!
 //! ```
 //! use std::thread;
-//! use mango::mpmc::bounded;
+//! use omango::mpmc::bounded;
 //!
 //! // Create a zero-capacity channel.
 //! let (tx, rx) = bounded(0);
@@ -87,7 +87,7 @@
 //!
 //! ```
 //! use std::thread;
-//! use mango::mpmc::bounded;
+//! use omango::mpmc::bounded;
 //!
 //! let (tx1, rx1) = bounded(0);
 //! let (tx2, rx2) = (tx1.clone(), rx1.clone());
@@ -107,7 +107,7 @@
 //! create a separate stream of messages in any way:
 //!
 //! ```
-//! use mango::mpmc::bounded;
+//! use omango::mpmc::bounded;
 //!
 //! let (tx1, rx1) = bounded(3);
 //! let (tx2, rx2) = (tx1.clone(), rx1.clone());
@@ -130,8 +130,8 @@
 //! Then send and receive operations on a disconnected channel always fail.
 //!
 //! ```
-//! use mango::mpmc::bounded;
-//! use mango::error::{RecvError, TryRecvError};
+//! use omango::mpmc::bounded;
+//! use omango::error::{RecvError, TryRecvError};
 //!
 //! let (tx, rx) = bounded(3);
 //! tx.send(1).unwrap();
@@ -162,8 +162,8 @@
 //! A simple example showing the difference between non-blocking and blocking operations:
 //!
 //! ```
-//! use mango::mpmc::bounded;
-//! use mango::error::{RecvError, TryRecvError};
+//! use omango::mpmc::bounded;
+//! use omango::error::{RecvError, TryRecvError};
 //!
 //! let (tx, rx) = bounded(1);
 //!
@@ -218,7 +218,7 @@ mod queue;
 /// ```
 /// use std::thread;
 /// use std::time::Duration;
-/// use mango::mpmc::bounded;
+/// use omango::mpmc::bounded;
 ///
 /// let (tx, rx) = bounded(1);
 ///
@@ -241,7 +241,7 @@ mod queue;
 /// ```
 /// use std::thread;
 /// use std::time::Duration;
-/// use mango::mpmc::bounded;
+/// use omango::mpmc::bounded;
 ///
 /// let (tx, rx) = bounded(0);
 ///
@@ -266,7 +266,7 @@ pub fn bounded<T: Send>(size: u32) -> (Sender<T>, Receiver<T>) {
 ///
 /// ```
 /// use std::thread;
-/// use mango::mpmc::bounded;
+/// use omango::mpmc::bounded;
 ///
 /// let (tx, rx) = bounded(1);
 /// let tx2 = tx.clone();
@@ -308,8 +308,8 @@ impl<T: Send> Sender<T> {
     /// # Examples
     ///
     /// ```
-    /// use mango::mpmc::bounded;
-    /// use mango::error::TrySendError;
+    /// use omango::mpmc::bounded;
+    /// use omango::error::TrySendError;
     ///
     /// let (tx, rx) = bounded(0);
     ///
@@ -337,8 +337,8 @@ impl<T: Send> Sender<T> {
     /// ```
     /// use std::thread;
     /// use std::time::Duration;
-    /// use mango::mpmc::bounded;
-    /// use mango::error::SendError;
+    /// use omango::mpmc::bounded;
+    /// use omango::error::SendError;
     ///
     /// let (tx, rx) = bounded(0);
     /// assert_eq!(tx.send(1), Ok(()));
@@ -371,7 +371,7 @@ impl<T: Send> Sender<T> {
 /// ```
 /// use std::thread;
 /// use std::time::Duration;
-/// use mango::mpmc::bounded;
+/// use omango::mpmc::bounded;
 ///
 /// let (tx, rx) = bounded(0);
 ///
@@ -413,8 +413,8 @@ impl<T: Send> Receiver<T> {
     /// # Examples
     ///
     /// ```
-    /// use mango::mpmc::bounded;
-    /// use mango::error::TryRecvError;
+    /// use omango::mpmc::bounded;
+    /// use omango::error::TryRecvError;
     ///
     /// let (tx, rx) = bounded(1);
     /// assert_eq!(rx.try_recv(), Err(TryRecvError));
@@ -444,8 +444,8 @@ impl<T: Send> Receiver<T> {
     /// ```
     /// use std::thread;
     /// use std::time::Duration;
-    /// use mango::mpmc::bounded;
-    /// use mango::error::RecvError;
+    /// use omango::mpmc::bounded;
+    /// use omango::error::RecvError;
     ///
     /// let (tx, rx) = bounded(1);
     ///

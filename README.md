@@ -1,18 +1,18 @@
 <p align="center">
   <a href='https://postimg.cc/1gBgL2MX' target='_blank'>
-    <img src='https://i.postimg.cc/1gBgL2MX/Pngtree-mango-in-flat-style-mango-3626110.png' border='0' alt='Pngtree-mango-in-flat-style-mango-3626110'/>
+    <img src='https://i.postimg.cc/1gBgL2MX/Pngtree-omango-in-flat-style-omango-3626110.png' border='0' alt='Pngtree-omango-in-flat-style-omango-3626110'/>
   </a>
 </p>
 <br/>
 <p align="center">
-  <a href="https://github.com/tqtrungse/mango/actions/workflows/rust.yml"><img src="https://github.com/tqtrungse/mango/actions/workflows/rust.yml/badge.svg?branch=master" alt="Rust"></a>
+  <a href="https://github.com/tqtrungse/omango/actions/workflows/rust.yml"><img src="https://github.com/tqtrungse/omango/actions/workflows/rust.yml/badge.svg?branch=master" alt="Rust"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-  <a href="https://github.com/tqtrungse/mango"><img src="https://img.shields.io/github/v/release/tqtrungse/mango" alt="Release"></a>
+  <a href="https://github.com/tqtrungse/omango"><img src="https://img.shields.io/github/v/release/tqtrungse/omango" alt="Release"></a>
   <a href="https://www.rust-lang.org"><img src="https://img.shields.io/badge/rust-1.49+-lightgray.svg" alt="Rust 1.49+"></a>
 </p>
 <br/>
 
-# Mango
+# Omango
 
 This is a concurrency library.<br />
 
@@ -51,7 +51,7 @@ Both `SPSC` and `MPMC` channel can be used as queues.<br />
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-mango = "0.1.0"
+omango = "0.1.0"
 ```
 
 ## Compatibility

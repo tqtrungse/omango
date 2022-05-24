@@ -93,7 +93,7 @@ impl<T> TrySendError<T> {
     /// # Examples
     ///
     /// ```
-    /// use mango::mpmc::bounded;
+    /// use omango::mpmc::bounded;
     ///
     /// let (tx, rx) = bounded(0);
     ///
