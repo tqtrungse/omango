@@ -133,7 +133,7 @@ fn send_recv_threads_no_capacity() {
 }
 
 #[test]
-fn tx_close_gets_none() {
+fn send_close_gets_none() {
     // SPSC
     {
         let (tx, rx) = mango::spsc::bounded::<i32>(0);
