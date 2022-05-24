@@ -14,13 +14,14 @@
 
 # Mango
 
-This is a concurrency library.
+This is a concurrency library.<br />
 
 The crate provides a lock-free bounded single-producer-single-consumer channel and
-multi-producer-multi-consumer channel.
+multi-producer-multi-consumer channel.<br />
+
 The channels are simple, lightweight, fast and safe in multithreading environment.
-It is faster than [std::mpsc::sync_channel](https://github.com/rust-lang/rust/tree/master/library/std/src/sync/mpsc) and other open source's bounded queue
-([multiqueue](https://github.com/schets/multiqueue), [flume](https://github.com/zesterer/flume), [crossbeam-channel](https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-channel)).
+It is faster than [std::mpsc::sync_channel](https://github.com/rust-lang/rust/tree/master/library/std/src/sync/mpsc) 
+and other open source's bounded queue ([multiqueue](https://github.com/schets/multiqueue), [flume](https://github.com/zesterer/flume), [crossbeam-channel](https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-channel)). <br/>
 
 ## Table of Contents
 
