@@ -3,6 +3,8 @@ name = "mango"
 version = "0.1.0"
 authors = ["Trung <tqtrungse@gmail.com>"]
 edition = "2021"
+description = "Lock-free bounded SPSC and MPMC channel"
+license = "MIT"
 
 [dev-dependencies]
 criterion = "0.3.5"
