@@ -1,6 +1,6 @@
 [package]
 name = "omango"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Trung <tqtrungse@gmail.com>"]
 edition = "2021"
 description = "Lock-free bounded SPSC and MPMC channel"
