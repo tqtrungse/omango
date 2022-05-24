@@ -119,7 +119,7 @@ impl error::Error for RecvError {}
 
 impl fmt::Display for TryRecvError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        "try receiving on an empty and disconnected channel".fmt(f)
+        "try receiving on an empty channel".fmt(f)
     }
 }
 
