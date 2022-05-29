@@ -17,6 +17,7 @@ num_cpus = "1.13.1"
 flume = "0.10.12"
 crossbeam-channel = "0.5.4"
 rtrb = "0.2.2"
+ringbuf = "0.2.8"
 
 [dependencies]
 likely_stable = "0.1.2"
