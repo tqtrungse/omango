@@ -53,19 +53,6 @@ fn send_recv() {
 
 #[test]
 fn send_shared_recv() {
-    // SPSC
-    {
-        let (tx1, rx) = omango::spsc::bounded(4);
-        let tx2 = tx1.clone();
-
-        tx1.send(1).unwrap();
-        assert_eq!(rx.recv().unwrap(), 1);
-
-        tx2.send(2).unwrap();
-        assert_eq!(rx.recv().unwrap(), 2);
-    }
-
-    // MPMC
     let (tx1, rx) = omango::mpmc::bounded(4);
     let tx2 = tx1.clone();
 
@@ -158,10 +145,9 @@ fn spsc_no_capacity() {
     let amt = 10000;
     let (tx, rx) = omango::spsc::bounded(0);
 
-    let txc = tx.clone();
     thread::spawn(move || {
         for _ in 0..amt {
-            assert_eq!(txc.send(1), Ok(()));
+            assert_eq!(tx.send(1), Ok(()));
         }
     });
     for _ in 0..amt {
