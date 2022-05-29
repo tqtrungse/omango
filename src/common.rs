@@ -23,10 +23,40 @@ use std::mem::MaybeUninit;
 use std::ptr;
 use std::sync::atomic::{AtomicU32, Ordering};
 
+#[macro_export]
+macro_rules! block {
+    ($is_closed:expr, $waker:expr, $selector:expr) => {
+        let waiter = Waiter::new();
+        let out_condition = || {
+            if unlikely($is_closed.load(Ordering::Relaxed)) {
+                return true;
+            }
+            unsafe {
+                let bucket = &*($selector.ptr as *const Bucket<T>);
+                if bucket.lap.load(Ordering::Acquire) != $selector.lap {
+                    return true;
+                }
+                false
+            }
+        };
+        if $waker.register(&waiter, out_condition) {
+            waiter.sleep(out_condition);
+            $waker.unregister(&waiter);
+        }
+    };
+}
+
+pub(crate) const N_SPIN: u8 = 128;
+
+pub(crate) enum Operation {
+    Sending,
+    Receiving,
+}
+
 /// It is an element in bounded queue.
 pub(crate) struct Bucket<T> {
-    lap: AtomicU32,
-    msg: UnsafeCell<MaybeUninit<T>>,
+    pub(crate) lap: AtomicU32,
+    pub(crate) msg: UnsafeCell<MaybeUninit<T>>,
 }
 
 impl<T> Default for Bucket<T> {
@@ -38,20 +68,13 @@ impl<T> Default for Bucket<T> {
     }
 }
 
-impl<T> Bucket<T> {
-    #[inline]
-    pub(crate) fn get_lap(&self) -> u32 {
-        self.lap.load(Ordering::Acquire)
-    }
-}
-
 /// Captures a lap and a reference to the selected bucket for writing or reading.
-pub(crate) struct Selector<T> {
-    ptr: *const Bucket<T>,
-    lap: u32,
+pub(crate) struct Selector {
+    pub(crate) ptr: *const u8,
+    pub(crate) lap: u32,
 }
 
-impl<T> Default for Selector<T> {
+impl Default for Selector {
     fn default() -> Self {
         Self {
             ptr: ptr::null(),
@@ -60,19 +83,14 @@ impl<T> Default for Selector<T> {
     }
 }
 
-impl<T> Selector<T> {
-    /// Stores reference to selected bucket and lap.
+impl Selector {
+    /// Writes message into bucket.
+    ///
+    /// Also wakes up one blocking receiver if having.
     #[inline]
-    pub(crate) fn set(&mut self, bucket: *const Bucket<T>, lap: u32) {
-        self.ptr = bucket;
-        self.lap = lap;
-    }
-
-    /// Writes message to bucket.
-    #[inline]
-    pub(crate) fn write_message(&self, msg: T) {
+    pub(crate) fn write_message<T>(&self, msg: T) {
         unsafe {
-            let bucket = &*(self.ptr);
+            let bucket = &*(self.ptr as *const Bucket<T>);
 
             // We own the element, do non-atomic write.
             bucket.msg.get().write(MaybeUninit::new(msg));
@@ -83,10 +101,12 @@ impl<T> Selector<T> {
     }
 
     /// Reads and removes message from bucket.
+    ///
+    /// Also wakes up one blocking sender if having.
     #[inline]
-    pub(crate) fn read_message(&self) -> T {
+    pub(crate) fn read_message<T>(&self) -> T {
         unsafe {
-            let bucket = &*(self.ptr);
+            let bucket = &*(self.ptr as *const Bucket<T>);
 
             // We own the element, do non-atomic read and remove.
             let msg = bucket.msg.get().read().assume_init();
@@ -94,18 +114,6 @@ impl<T> Selector<T> {
             // Make the element available for writing.
             bucket.lap.store(self.lap + 1, Ordering::Release);
             msg
-        }
-    }
-
-    /// Checks the bucket is ready for writing or reading.
-    #[inline]
-    pub(crate) fn is_ready(&self) -> bool {
-        unsafe {
-            let bucket = &*(self.ptr);
-            if bucket.lap.load(Ordering::Acquire) != self.lap {
-                return true;
-            }
-            false
         }
     }
 }

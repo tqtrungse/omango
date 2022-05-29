@@ -19,10 +19,13 @@
 // SOFTWARE.
 
 //! Fixed size SPSC channel for message passing. It is built
-//! based on a SPSC queue
+//! based on a SPSC queue.
 //!
-//! This crate is an alternative to [`std::sync::mpsc`], `flume::bounded`,
-//! `crossbeam_channel::bounded` with better performance.
+//! It has good performance and supports blocking functions
+//! that other SPSC queues usually don't have.
+//!
+//! It can be an alternative to [`std::sync::mpsc`], `flume::bounded`, `crossbeam_channel::bounded`
+//! though they are MPMC but their SPSC are very fast.
 //!
 //! # Hello, world!
 //!
@@ -30,7 +33,7 @@
 //! use omango::spsc::bounded;
 //!
 //! // Create a channel of unbounded capacity.
-//! let (tx, rx) = bounded(1);
+//! let (tx, rx) = bounded(0);
 //!
 //! // Send a message into the channel.
 //! tx.send("Hello, world!").unwrap();
@@ -79,47 +82,6 @@
 //!
 //! // Receiving blocks until a send operation appears on the other side.
 //! assert_eq!(rx.recv(), Ok("Hi!"));
-//! ```
-//!
-//! # Sharing channels
-//!
-//! Senders and receivers can be cloned and sent to other threads:
-//!
-//! ```
-//! use std::thread;
-//! use omango::spsc::bounded;
-//!
-//! let (tx1, rx1) = bounded(0);
-//! let (tx2, rx2) = (tx1.clone(), rx1.clone());
-//!
-//! // Spawn a thread that receives a message and then sends one.
-//! thread::spawn(move || {
-//!     rx2.recv().unwrap();
-//!     tx2.send(2).unwrap();
-//! });
-//!
-//! // Send a message and then receive one.
-//! tx1.send(1).unwrap();
-//! rx1.recv().unwrap();
-//! ```
-//!
-//! Note that cloning only creates a new handle to the same sending or receiving side. It does not
-//! create a separate stream of messages in any way:
-//!
-//! ```
-//! use omango::spsc::bounded;
-//!
-//! let (tx1, rx1) = bounded(3);
-//! let (tx2, rx2) = (tx1.clone(), rx1.clone());
-//! let (tx3, rx3) = (tx2.clone(), rx2.clone());
-//!
-//! tx1.send(10).unwrap();
-//! tx2.send(20).unwrap();
-//! tx3.send(30).unwrap();
-//!
-//! assert_eq!(rx3.recv(), Ok(10));
-//! assert_eq!(rx1.recv(), Ok(20));
-//! assert_eq!(rx2.recv(), Ok(30));
 //! ```
 //!
 //! # Disconnection
@@ -192,6 +154,7 @@
 //! [`send`]: Sender::send
 //! [`recv`]: Receiver::recv
 //! [`try_recv`]: Receiver::try_recv
+
 use std::cell::UnsafeCell;
 use std::sync::Arc;
 
@@ -268,10 +231,11 @@ pub fn bounded<T: Send>(size: u32) -> (Sender<T>, Receiver<T>) {
 /// use omango::spsc::bounded;
 ///
 /// let (tx, rx) = bounded(1);
-/// let tx2 = tx.clone();
 ///
-/// thread::spawn(move || tx.send(1).unwrap());
-/// thread::spawn(move || tx2.send(2).unwrap());
+/// thread::spawn(move || {
+///     tx.send(1).unwrap();
+///     tx.send(2).unwrap();
+/// });
 ///
 /// let msg1 = rx.recv().unwrap();
 /// let msg2 = rx.recv().unwrap();
@@ -285,13 +249,6 @@ pub struct Sender<T> {
 unsafe impl<T: Send> Send for Sender<T> {}
 
 unsafe impl<T: Send> Sync for Sender<T> {}
-
-impl<T: Send> Clone for Sender<T> {
-    #[inline]
-    fn clone(&self) -> Self {
-        Self { inner: self.inner.clone() }
-    }
-}
 
 impl<T: Send> Sender<T> {
     #[inline]
@@ -358,11 +315,32 @@ impl<T: Send> Sender<T> {
 
     /// Fires closing channel notification.
     ///
-    /// After closed, all [`send`] and [`recv`] operations will be failed.
+    /// After closed, all [`try_send`], [`send`] and [`recv`] operations will be failed.
     ///
     /// Uses [`try_recv`] to read remaining messages.
     ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::thread;
+    /// use std::time::Duration;
+    /// use omango::spsc::bounded;
+    /// use omango::error::{RecvError, SendError};
+    ///
+    /// let (tx, rx) = bounded(0);
+    ///
+    /// thread::spawn(move || {
+    ///     thread::sleep(Duration::from_secs(1));
+    ///     assert_eq!(tx.send(1), Ok(()));
+    ///     tx.close();
+    /// });
+    ///
+    /// assert_eq!(rx.recv(), Err(RecvError));
+    /// assert_eq!(rx.try_recv(), Ok(1));
+    /// ```
+    ///
     /// [`send`]: Sender::send
+    /// [`try_send`]: Sender::try_send
     /// [`recv`]: Receiver::recv
     /// [`try_recv`]: Receiver::try_recv
     #[inline]
@@ -398,13 +376,6 @@ pub struct Receiver<T> {
 unsafe impl<T: Send> Send for Receiver<T> {}
 
 unsafe impl<T: Send> Sync for Receiver<T> {}
-
-impl<T: Send> Clone for Receiver<T> {
-    #[inline]
-    fn clone(&self) -> Self {
-        Self { inner: self.inner.clone() }
-    }
-}
 
 impl<T: Send> Receiver<T> {
     #[inline]
@@ -473,11 +444,32 @@ impl<T: Send> Receiver<T> {
 
     /// Fires closing channel notification.
     ///
-    /// After closed, all [`send`] and [`recv`] operations will be failed.
+    /// After closed, all [`try_send`], [`send`] and [`recv`] operations will be failed.
     ///
     /// Uses [`try_recv`] to read remaining messages.
     ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::thread;
+    /// use std::time::Duration;
+    /// use omango::spsc::bounded;
+    /// use omango::error::{RecvError, SendError};
+    ///
+    /// let (tx, rx) = bounded(0);
+    ///
+    /// thread::spawn(move || {
+    ///     thread::sleep(Duration::from_secs(1));
+    ///     assert_eq!(tx.send(1), Ok(()));
+    ///     tx.close();
+    /// });
+    ///
+    /// assert_eq!(rx.recv(), Err(RecvError));
+    /// assert_eq!(rx.try_recv(), Ok(1));
+    /// ```
+    ///
     /// [`send`]: Sender::send
+    /// [`try_send`]: Sender::try_send
     /// [`recv`]: Receiver::recv
     /// [`try_recv`]: Receiver::try_recv
     #[inline]

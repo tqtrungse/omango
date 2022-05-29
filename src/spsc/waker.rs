@@ -18,17 +18,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use std::collections::VecDeque;
+use std::collections::vec_deque::VecDeque;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::thread::Thread;
 
-use likely_stable::likely;
-
+use crate::common::N_SPIN;
 use crate::spsc::spinlock::Spinlock;
-
-const N_TOTAL: u8 = 132;
-const N_SPIN: u8 = 128;
 
 /// An object to implement blocking.
 pub(crate) struct Waiter {
@@ -51,20 +47,11 @@ impl Waiter {
         // CHEAT:
         // `out_condition' will be activated soon in multithreading environment.
         // So I will retry N times before blocking the current thread.
-        for i in 0..N_TOTAL {
+        for _ in 0..N_SPIN {
             if out_condition() {
                 return;
             }
-            if likely(i < N_SPIN) {
-                core::hint::spin_loop();
-            } else {
-                // The lost wake up case can happen ( 'unpark' happen before 'park').
-                // SOLVED: gives up the times of the current thread to other threads work.
-                // When it reworks there is a very high probability that it is ready
-                // if there is a high contention going on.
-                // If N times giving up is not ready, the current thread should be blocked.
-                thread::yield_now();
-            }
+            core::hint::spin_loop();
         }
         while !out_condition() {
             thread::park();
@@ -123,18 +110,6 @@ impl Metadata {
             unsafe { (*(*self.waiters.get(0).unwrap())).wake(); }
         }
     }
-
-    /// Wakes up all waiters from the queue.
-    ///
-    /// It doesn't remove waiters.
-    #[inline]
-    fn notify_all(&mut self) {
-        if !self.waiters.is_empty() {
-            for iter in self.waiters.iter() {
-                unsafe { (*(*iter)).wake(); }
-            }
-        }
-    }
 }
 
 /// An object to manage waiters and blocking.
@@ -144,7 +119,7 @@ pub(crate) struct Waker {
 }
 
 impl Waker {
-    #[inline(always)]
+    #[inline]
     pub(crate) fn new() -> Self {
         Self {
             guard: Spinlock::new(Metadata::new()),
@@ -190,17 +165,6 @@ impl Waker {
     pub(crate) fn notify(&self) {
         if !self.is_empty.load(Ordering::SeqCst) {
             self.guard.lock().notify();
-        }
-    }
-
-    /// Wakes up all waiters from the queue.
-    ///
-    /// It doesn't remove waiters.
-    #[inline]
-    pub(crate) fn notify_all(&self) {
-        if !self.is_empty.load(Ordering::SeqCst) {
-            self.guard.lock().notify_all();
-            self.is_empty.store(true, Ordering::SeqCst);
         }
     }
 }

@@ -21,8 +21,8 @@
 //! Fixed size MPMC channel for message passing. It is built
 //! based on a MPMC queue
 //!
-//! This crate is an alternative to [`std::sync::mpsc`], `flume::bounded`,
-//! `crossbeam_channel::bounded` with better performance.
+//! It can be an alternative to [`std::sync::mpsc`], `flume::bounded`,
+//! `crossbeam_channel::bounded` (sometimes) with better performance.
 //!
 //! # Hello, world!
 //!
@@ -359,11 +359,32 @@ impl<T: Send> Sender<T> {
 
     /// Fires closing channel notification.
     ///
-    /// After closed, all [`send`] and [`recv`] operations will be failed.
+    /// After closed, all [`try_send`], [`send`] and [`recv`] operations will be failed.
     ///
     /// Uses [`try_recv`] to read remaining messages.
     ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::thread;
+    /// use std::time::Duration;
+    /// use omango::mpmc::bounded;
+    /// use omango::error::{RecvError, SendError};
+    ///
+    /// let (tx, rx) = bounded(0);
+    ///
+    /// thread::spawn(move || {
+    ///     thread::sleep(Duration::from_secs(1));
+    ///     assert_eq!(tx.send(1), Ok(()));
+    ///     tx.close();
+    /// });
+    ///
+    /// assert_eq!(rx.recv(), Err(RecvError));
+    /// assert_eq!(rx.try_recv(), Ok(1));
+    /// ```
+    ///
     /// [`send`]: Sender::send
+    /// [`try_send`]: Sender::try_send
     /// [`recv`]: Receiver::recv
     /// [`try_recv`]: Receiver::try_recv
     #[inline]
@@ -474,11 +495,32 @@ impl<T: Send> Receiver<T> {
 
     /// Fires closing channel notification.
     ///
-    /// After closed, all [`send`] and [`recv`] operations will be failed.
+    /// After closed, all [`try_send`], [`send`] and [`recv`] operations will be failed.
     ///
     /// Uses [`try_recv`] to read remaining messages.
     ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::thread;
+    /// use std::time::Duration;
+    /// use omango::mpmc::bounded;
+    /// use omango::error::{RecvError, SendError};
+    ///
+    /// let (tx, rx) = bounded(0);
+    ///
+    /// thread::spawn(move || {
+    ///     thread::sleep(Duration::from_secs(1));
+    ///     assert_eq!(tx.send(1), Ok(()));
+    ///     tx.close();
+    /// });
+    ///
+    /// assert_eq!(rx.recv(), Err(RecvError));
+    /// assert_eq!(rx.try_recv(), Ok(1));
+    /// ```
+    ///
     /// [`send`]: Sender::send
+    /// [`try_send`]: Sender::try_send
     /// [`recv`]: Receiver::recv
     /// [`try_recv`]: Receiver::try_recv
     #[inline]
