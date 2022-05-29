@@ -28,7 +28,8 @@ and other open source's bounded queue ([multiqueue](https://github.com/schets/mu
 
 - [Introduction](#introduction)
 - [Usage](#usage)
-- [Compatibility](#Compatibility)
+- [Compatibility](#compatibility)
+- [Benchmarks](#benchmarks)
 - [License](#license)
 - [Reference](#refecence)
 
@@ -58,6 +59,15 @@ omango = "0.1.2"
 ## Compatibility
 
 The minimum supported Rust version is 1.49.
+
+## Benchmarks
+
+Tests were performed on an Intel Core I5 with 4 cores running Windows 10 and
+M1 with 8 cores running MacOS BigSur 11.3.
+
+# <img src="./misc/SPSC.png" alt="Omango benchmarks SPSC" width="100%"/>
+# <img src="./misc/MPSC.png" alt="Omango benchmarks MPSC" width="100%"/>
+# <img src="./misc/MPMC.png" alt="Omango benchmarks MPMC" width="100%"/>
 
 ## License
 
