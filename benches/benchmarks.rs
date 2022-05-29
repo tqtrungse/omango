@@ -1,10 +1,9 @@
 use std::thread;
 
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
-use rtrb::RingBuffer;
 
-fn my_spsc_block() {
-    let (tx, rx) = omango::spsc::bounded(1024);
+fn omango_spsc_block() {
+    let (tx, rx) = omango::spsc::bounded(1023);
     let thread = thread::spawn(move || {
         for _ in 0..2000 {
             assert_eq!(tx.send(1), Ok(()));
@@ -16,8 +15,8 @@ fn my_spsc_block() {
     thread.join().unwrap();
 }
 
-fn my_spsc_nonblock() {
-    let (tx, rx) = omango::spsc::bounded(1024);
+fn omango_spsc_nonblock() {
+    let (tx, rx) = omango::spsc::bounded(1023);
     let thread = thread::spawn(move || {
         for _ in 0..2000 {
             loop {
@@ -42,9 +41,9 @@ fn my_spsc_nonblock() {
     thread.join().unwrap();
 }
 
-fn my_mpsc_block() {
-    let (tx, rx) = omango::mpmc::bounded(1024);
-    let nthreads = (2 * num_cpus::get()) - 1;
+fn omango_mpsc_block() {
+    let (tx, rx) = omango::mpmc::bounded(1023);
+    let nthreads = (2 * num_cpus::get()) - 2;
     let mut sending_threads = Vec::new();
 
     for _ in 0..nthreads {
@@ -64,9 +63,9 @@ fn my_mpsc_block() {
     }
 }
 
-fn my_mpsc_nonblock() {
-    let (tx, rx) = omango::mpmc::bounded(1024);
-    let nthreads = (2 * num_cpus::get()) - 1;
+fn omango_mpsc_nonblock() {
+    let (tx, rx) = omango::mpmc::bounded(1023);
+    let nthreads = (2 * num_cpus::get()) - 2;
     let mut sending_threads = Vec::new();
 
     for _ in 0..nthreads {
@@ -105,8 +104,8 @@ fn my_mpsc_nonblock() {
     }
 }
 
-fn my_mpmc_block() {
-    let (tx, rx) = omango::mpmc::bounded(1024);
+fn omango_mpmc_block() {
+    let (tx, rx) = omango::mpmc::bounded(1023);
     let nthreads = num_cpus::get() - 1;
     let mut sending_threads = Vec::new();
     let mut receiving_threads = Vec::new();
@@ -139,8 +138,8 @@ fn my_mpmc_block() {
     }
 }
 
-fn my_mpmc_nonblock() {
-    let (tx, rx) = omango::mpmc::bounded(1024);
+fn omango_mpmc_nonblock() {
+    let (tx, rx) = omango::mpmc::bounded(1023);
     let nthreads = num_cpus::get() - 1;
     let mut sending_threads = Vec::new();
     let mut receiving_threads = Vec::new();
@@ -233,7 +232,7 @@ fn std_spsc_noblock() {
 
 fn std_mpsc_block() {
     let (tx, rx) = std::sync::mpsc::sync_channel(1024);
-    let nthreads = (2 * num_cpus::get()) - 1;
+    let nthreads = (2 * num_cpus::get()) - 2;
     let mut sending_threads = Vec::new();
 
     for _ in 0..nthreads {
@@ -255,7 +254,7 @@ fn std_mpsc_block() {
 
 fn std_mpsc_nonblock() {
     let (tx, rx) = std::sync::mpsc::sync_channel(1024);
-    let nthreads = (2 * num_cpus::get()) - 1;
+    let nthreads = (2 * num_cpus::get()) - 2;
     let mut sending_threads = Vec::new();
 
     for _ in 0..nthreads {
@@ -335,7 +334,7 @@ fn flume_spsc_nonblock() {
 
 fn flume_mpsc_block() {
     let (tx, rx) = flume::bounded(1024);
-    let nthreads = (2 * num_cpus::get()) - 1;
+    let nthreads = (2 * num_cpus::get()) - 2;
     let mut sending_threads = Vec::new();
 
     for _ in 0..nthreads {
@@ -357,7 +356,7 @@ fn flume_mpsc_block() {
 
 fn flume_mpsc_nonblock() {
     let (tx, rx) = flume::bounded(1024);
-    let nthreads = (2 * num_cpus::get()) - 1;
+    let nthreads = (2 * num_cpus::get()) - 2;
     let mut sending_threads = Vec::new();
 
     for _ in 0..nthreads {
@@ -484,7 +483,7 @@ fn flume_mpmc_nonblock() {
 }
 
 fn crossbeam_spsc_block() {
-    let (tx, rx) = crossbeam_channel::bounded(1024);
+    let (tx, rx) = crossbeam_channel::bounded(1023);
     let thread = thread::spawn(move || {
         for _ in 1..2000 {
             assert_eq!(tx.send(1), Ok(()));
@@ -497,7 +496,7 @@ fn crossbeam_spsc_block() {
 }
 
 fn crossbeam_spsc_nonblock() {
-    let (tx, rx) = crossbeam_channel::bounded(1024);
+    let (tx, rx) = crossbeam_channel::bounded(1023);
     let thread = thread::spawn(move || {
         for _ in 0..2000 {
             loop {
@@ -523,8 +522,8 @@ fn crossbeam_spsc_nonblock() {
 }
 
 fn crossbeam_mpsc_block() {
-    let (tx, rx) = crossbeam_channel::bounded(1024);
-    let nthreads = (2 * num_cpus::get()) - 1;
+    let (tx, rx) = crossbeam_channel::bounded(1023);
+    let nthreads = (2 * num_cpus::get()) - 2;
     let mut sending_threads = Vec::new();
 
     for _ in 0..nthreads {
@@ -545,8 +544,8 @@ fn crossbeam_mpsc_block() {
 }
 
 fn crossbeam_mpsc_nonblock() {
-    let (tx, rx) = crossbeam_channel::bounded(1024);
-    let nthreads = (2 * num_cpus::get()) - 1;
+    let (tx, rx) = crossbeam_channel::bounded(1023);
+    let nthreads = (2 * num_cpus::get()) - 2;
     let mut sending_threads = Vec::new();
 
     for _ in 0..nthreads {
@@ -586,7 +585,7 @@ fn crossbeam_mpsc_nonblock() {
 }
 
 fn crossbeam_mpmc_block() {
-    let (tx, rx) = crossbeam_channel::bounded(1024);
+    let (tx, rx) = crossbeam_channel::bounded(1023);
     let nthreads = num_cpus::get() - 1;
     let mut sending_threads = Vec::new();
     let mut receiving_threads = Vec::new();
@@ -620,7 +619,7 @@ fn crossbeam_mpmc_block() {
 }
 
 fn crossbeam_mpmc_nonblock() {
-    let (tx, rx) = crossbeam_channel::bounded(1024);
+    let (tx, rx) = crossbeam_channel::bounded(1023);
     let nthreads = num_cpus::get() - 1;
     let mut sending_threads = Vec::new();
     let mut receiving_threads = Vec::new();
@@ -673,7 +672,7 @@ fn crossbeam_mpmc_nonblock() {
 }
 
 fn rtrb_spsc_nonblock() {
-    let (mut tx, mut rx) = RingBuffer::new(1024);
+    let (mut tx, mut rx) = rtrb::RingBuffer::new(1024);
     let thread = thread::spawn(move || {
         for _ in 1..2000 {
             loop {
@@ -698,6 +697,33 @@ fn rtrb_spsc_nonblock() {
     thread.join().unwrap();
 }
 
+fn ringbuf_spsc_nonblock() {
+    let rb = ringbuf::RingBuffer::<i32>::new(1024);
+    let (mut tx, mut rx) = rb.split();
+    let thread = thread::spawn(move || {
+        for _ in 1..2000 {
+            loop {
+                match tx.push(1) {
+                    Ok(()) => break,
+                    Err(_) => continue
+                }
+            }
+        }
+    });
+    for _ in 1..2000 {
+        loop {
+            match rx.pop() {
+                Some(v) => {
+                    assert_eq!(v, 1);
+                    break;
+                }
+                None => continue
+            }
+        }
+    }
+    thread.join().unwrap();
+}
+
 fn bench_spsc_block(c: &mut Criterion) {
     let mut group = c.benchmark_group("SPSC-Block");
     for i in 0u64..3u64 {
@@ -707,8 +733,8 @@ fn bench_spsc_block(c: &mut Criterion) {
                              |b| b.iter(|| flume_spsc_block()));
         group.bench_function(BenchmarkId::new("Crossbeam", &i),
                              |b| b.iter(|| crossbeam_spsc_block()));
-        group.bench_function(BenchmarkId::new("My", &i),
-                             |b| b.iter(|| my_spsc_block()));
+        group.bench_function(BenchmarkId::new("Omango", &i),
+                             |b| b.iter(|| omango_spsc_block()));
     }
     group.finish();
 }
@@ -724,8 +750,10 @@ fn bench_spsc_nonblock(c: &mut Criterion) {
                              |b| b.iter(|| crossbeam_spsc_block()));
         group.bench_function(BenchmarkId::new("Rtrb", &i),
                              |b| b.iter(|| rtrb_spsc_nonblock()));
-        group.bench_function(BenchmarkId::new("My", &i),
-                             |b| b.iter(|| my_spsc_block()));
+        group.bench_function(BenchmarkId::new("Ringbuf", &i),
+                             |b| b.iter(|| ringbuf_spsc_nonblock()));
+        group.bench_function(BenchmarkId::new("Omango", &i),
+                             |b| b.iter(|| omango_spsc_nonblock()));
     }
     group.finish();
 }
@@ -739,8 +767,8 @@ fn bench_mpsc_block(c: &mut Criterion) {
                              |b| b.iter(|| flume_mpsc_block()));
         group.bench_function(BenchmarkId::new("Crossbeam", &i),
                              |b| b.iter(|| crossbeam_mpsc_block()));
-        group.bench_function(BenchmarkId::new("My", &i),
-                             |b| b.iter(|| my_mpsc_block()));
+        group.bench_function(BenchmarkId::new("Omango", &i),
+                             |b| b.iter(|| omango_mpsc_block()));
     }
     group.finish();
 }
@@ -754,8 +782,8 @@ fn bench_mpsc_nonblock(c: &mut Criterion) {
                              |b| b.iter(|| flume_mpsc_nonblock()));
         group.bench_function(BenchmarkId::new("Crossbeam", &i),
                              |b| b.iter(|| crossbeam_mpsc_nonblock()));
-        group.bench_function(BenchmarkId::new("My", &i),
-                             |b| b.iter(|| my_mpsc_nonblock()));
+        group.bench_function(BenchmarkId::new("Omango", &i),
+                             |b| b.iter(|| omango_mpsc_nonblock()));
     }
     group.finish();
 }
@@ -767,8 +795,8 @@ fn bench_mpmc_block(c: &mut Criterion) {
                              |b| b.iter(|| flume_mpmc_block()));
         group.bench_function(BenchmarkId::new("Crossbeam", &i),
                              |b| b.iter(|| crossbeam_mpmc_block()));
-        group.bench_function(BenchmarkId::new("My", &i),
-                             |b| b.iter(|| my_mpmc_block()));
+        group.bench_function(BenchmarkId::new("Omango", &i),
+                             |b| b.iter(|| omango_mpmc_block()));
     }
     group.finish();
 }
@@ -780,11 +808,11 @@ fn bench_mpmc_nonblock(c: &mut Criterion) {
                              |b| b.iter(|| flume_mpmc_nonblock()));
         group.bench_function(BenchmarkId::new("Crossbeam", &i),
                              |b| b.iter(|| crossbeam_mpmc_nonblock()));
-        group.bench_function(BenchmarkId::new("My", &i),
-                             |b| b.iter(|| my_mpmc_nonblock()));
+        group.bench_function(BenchmarkId::new("Omango", &i),
+                             |b| b.iter(|| omango_mpmc_nonblock()));
     }
     group.finish();
 }
 
-criterion_group!(benches, bench_spsc_nonblock);
+criterion_group!(benches, bench_mpmc_block);
 criterion_main!(benches);
