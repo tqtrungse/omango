@@ -22,7 +22,7 @@ multi-producer-multi-consumer channel.<br />
 
 The channels are simple, lightweight, fast and safe in multithreading environment.
 It is faster than [std::mpsc::sync_channel](https://github.com/rust-lang/rust/tree/master/library/std/src/sync/mpsc) 
-and other open source's bounded queue ([multiqueue](https://github.com/schets/multiqueue), [flume](https://github.com/zesterer/flume), [crossbeam-channel](https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-channel)). <br/>
+and other open source's bounded queue ([ringbuf](https://github.com/agerasev/ringbuf), [flume](https://github.com/zesterer/flume), [crossbeam-channel](https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-channel)). <br/>
 
 ## Table of Contents
 
@@ -53,7 +53,7 @@ Both `SPSC` and `MPMC` channel can be used as queues.<br />
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-omango = "0.1.2"
+omango = "0.1.4"
 ```
 
 ## Compatibility
@@ -62,7 +62,7 @@ The minimum supported Rust version is 1.49.
 
 ## Benchmarks
 
-Tests were performed on an Intel Core I5 with 4 cores running Windows 10 and
+Tests were performed on an Intel Core I5 with 4 cores running Windows 10 and 
 M1 with 8 cores running MacOS BigSur 11.3.
 
 # <img src="./misc/SPSC.png" alt="Omango benchmarks SPSC" width="100%"/>
