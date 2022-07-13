@@ -22,6 +22,6 @@ pub mod spsc;
 pub mod mpmc;
 pub mod error;
 
-mod backoff;
-mod cache_padded;
 mod common;
+pub mod backoff;
+pub mod cache_padded;

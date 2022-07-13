@@ -19,54 +19,75 @@
 // SOFTWARE.
 
 use std::collections::vec_deque::VecDeque;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::thread;
 use std::thread::Thread;
 
-use crate::common::N_SPIN;
+use likely_stable::unlikely;
+
+use crate::common::{CLOSED, FAILED, N_SPIN, SUCCESS};
 use crate::spsc::spinlock::Spinlock;
 
 /// An object to implement blocking.
 pub(crate) struct Waiter {
+    bucket_lap: *const AtomicU32,
+    capture_lap: u32,
     thread: Thread,
+    parked: AtomicBool,
 }
 
 impl Waiter {
     #[inline]
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(bucket_lap: *const AtomicU32, lap: u32) -> Self {
         Self {
+            bucket_lap,
+            capture_lap: lap,
             thread: thread::current(),
+            parked: AtomicBool::new(false),
         }
     }
 
-    /// Blocks the current thread.
+    /// Retries and snooze the current thread.
     ///
     /// Before real blocking, it will spin and retry N times to check condition.
     /// This thing significantly improves performance.
-    pub(crate) fn sleep<F>(&self, out_condition: F) where F: Fn() -> bool {
-        // CHEAT:
-        // `out_condition' will be activated soon in multithreading environment.
-        // So I will retry N times before blocking the current thread.
-        for _ in 0..N_SPIN {
-            if out_condition() {
-                return;
+    pub(crate) fn retry_and_snooze(&self, closed: &AtomicBool, n_retry: u8) -> u8 {
+        let bucket_lap = unsafe { &(*self.bucket_lap) };
+        for _ in 0..n_retry {
+            for _ in 0..N_SPIN {
+                if unlikely(closed.load(Ordering::Relaxed)) {
+                    return CLOSED;
+                }
+                if bucket_lap.load(Ordering::Acquire) != self.capture_lap {
+                    return SUCCESS;
+                }
+                core::hint::spin_loop();
             }
-            core::hint::spin_loop();
         }
-        while !out_condition() {
-            thread::park();
-        }
+        FAILED
     }
 
-    /// Unblocks the current thread.
-    #[inline]
-    fn wake(&self) {
-        self.thread.unpark();
+    /// Blocks the current thread until woken.
+    pub(crate) fn sleep(&self, closed: &AtomicBool) -> u8 {
+        let bucket_lap = unsafe { &(*self.bucket_lap) };
+        self.parked.store(true, Ordering::Relaxed);
+        loop {
+            if unlikely(closed.load(Ordering::Relaxed)) {
+                self.parked.store(false, Ordering::Release);
+                return CLOSED;
+            }
+            if bucket_lap.load(Ordering::Acquire) != self.capture_lap {
+                self.parked.store(false, Ordering::Release);
+                return SUCCESS;
+            }
+            thread::park();
+        }
     }
 }
 
 struct Metadata {
     waiters: VecDeque<*const Waiter>,
+    closed: bool,
 }
 
 impl Metadata {
@@ -74,6 +95,7 @@ impl Metadata {
     fn new() -> Self {
         Self {
             waiters: VecDeque::new(),
+            closed: false,
         }
     }
 
@@ -105,9 +127,23 @@ impl Metadata {
     ///
     /// It doesn't remove waiter.
     #[inline]
-    fn notify(&mut self) {
+    fn notify(&self) {
         if !self.waiters.is_empty() {
-            unsafe { (*(*self.waiters.get(0).unwrap())).wake(); }
+            let waiter = self.waiters.get(0).unwrap();
+            unsafe {
+                if (*(*waiter)).parked.load(Ordering::Acquire) {
+                    (*(*waiter)).thread.unpark();
+                }
+            }
+        }
+    }
+
+    fn close(&mut self) {
+        self.closed = true;
+        if !self.waiters.is_empty() {
+            for iter in self.waiters.iter() {
+                unsafe { (*(*iter)).thread.unpark(); }
+            }
         }
     }
 }
@@ -115,7 +151,7 @@ impl Metadata {
 /// An object to manage waiters and blocking.
 pub(crate) struct Waker {
     guard: Spinlock<Metadata>,
-    is_empty: AtomicBool,
+    empty: AtomicBool,
 }
 
 impl Waker {
@@ -123,7 +159,7 @@ impl Waker {
     pub(crate) fn new() -> Self {
         Self {
             guard: Spinlock::new(Metadata::new()),
-            is_empty: AtomicBool::new(true),
+            empty: AtomicBool::new(true),
         }
     }
 
@@ -135,13 +171,18 @@ impl Waker {
     /// Returns `False` if bucket is ready or queue is closed.
     /// Returns `True` if bucket is not ready and the queue is still opened.
     #[inline]
-    pub(crate) fn register<F>(&self, waiter: &Waiter, out_condition: F) -> bool where F: Fn() -> bool {
+    pub(crate) fn register(&self, waiter: &Waiter) -> bool {
         let mut inner = self.guard.lock();
-        if out_condition() {
+        if inner.closed {
             return false;
         }
+        unsafe {
+            if (*waiter.bucket_lap).load(Ordering::Acquire) != waiter.capture_lap {
+                return false;
+            }
+        }
         inner.register(waiter);
-        self.is_empty.store(false, Ordering::SeqCst);
+        self.empty.store(false, Ordering::SeqCst);
         true
     }
 
@@ -150,10 +191,10 @@ impl Waker {
     /// It should be used by the blocking thread to avoid lost wakeup.
     #[inline]
     pub(crate) fn unregister(&self, waiter: &Waiter) {
-        if !self.is_empty.load(Ordering::SeqCst) {
+        if !self.empty.load(Ordering::SeqCst) {
             let mut inner = self.guard.lock();
             if inner.unregister(waiter) {
-                self.is_empty.store(inner.waiters.is_empty(), Ordering::SeqCst);
+                self.empty.store(inner.waiters.is_empty(), Ordering::SeqCst);
             }
         }
     }
@@ -163,8 +204,17 @@ impl Waker {
     /// It doesn't remove waiter.
     #[inline]
     pub(crate) fn notify(&self) {
-        if !self.is_empty.load(Ordering::SeqCst) {
+        if !self.empty.load(Ordering::SeqCst) {
             self.guard.lock().notify();
         }
+    }
+
+    /// Wakes up all waiters from the queue.
+    ///
+    /// It doesn't remove waiters.
+    #[inline]
+    pub(crate) fn close(&self) {
+        self.guard.lock().close();
+        self.empty.store(true, Ordering::SeqCst);
     }
 }

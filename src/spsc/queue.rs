@@ -23,18 +23,19 @@
 //! Source:
 //!   - '<https://docs.google.com/document/d/1yIAYmbvL3JxOKOjuCyon7JhW4cSv1wy5hC0ApeGMV9s/pub>'
 
+use std::mem::MaybeUninit;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use likely_stable::unlikely;
 
-use crate::block;
+use crate::{block_for_recv, block_for_send, read_message, write_message};
 use crate::cache_padded::CachePadded;
-use crate::common::{Bucket, N_SPIN, Operation, Selector};
+use crate::common::{Bucket, CLOSED, N_RETRY_SPSC, Operation, SUCCESS};
 use crate::error::{RecvError, SendError, TryRecvError, TrySendError};
 use crate::spsc::waker::{Waiter, Waker};
 
-macro_rules! get_selector {
-    ($data:expr, $buffer:expr, $capacity:expr, $selector:expr) => {
+macro_rules! select_bucket {
+    ($data:expr, $buffer:expr, $capacity:expr) => {
         let mut data = $data.load(Ordering::Relaxed);
         loop {
             let pos = data as u32;
@@ -48,28 +49,18 @@ macro_rules! get_selector {
                 let new_data = if pos + 1 < $capacity {
                     data + 1
                 } else {
-                    ((lap + 2) as u64) << 32
+                    (lap.wrapping_add(2) as u64) << 32
                 };
 
                 match $data.compare_exchange_weak(data, new_data, Ordering::Acquire, Ordering::Relaxed) {
-                    Ok(_) => {
-                        // $selector.ptr = bucket as *const Bucket<T> as *const u8;
-                        // $selector.lap = bucket_lap;
-                        $selector.ptr = bucket as *const Bucket<T> as *const u8;
-                        $selector.lap = bucket_lap;
-                        return true;
-                    },
+                    Ok(_) => return (bucket as &Bucket<T>, bucket_lap, true),
                     Err(v) => data = v,
                 }
             } else if lap > bucket_lap {
                 // The element is not yet write/read on the previous lap,
                 // the chan is empty/full.
                 if lap > bucket.lap.load(Ordering::Acquire) {
-                    // $selector.ptr = bucket as *const Bucket<T> as *const u8;
-                    // $selector.lap = bucket_lap;
-                    $selector.ptr = bucket as *const Bucket<T> as *const u8;
-                    $selector.lap = bucket_lap;
-                    return false;
+                    return (bucket as &Bucket<T>, bucket_lap, false);
                 }
                 // The element has already been written/read on this lap,
                 // this means that `send_data`/`read_data` has been changed as well,
@@ -92,7 +83,7 @@ pub(crate) struct Spsc<T> {
 
     buffer: Box<[Bucket<T>]>,
     capacity: u32,
-    is_closed: AtomicBool,
+    closed: AtomicBool,
 
     receiver: Waker,
     sender: Waker,
@@ -113,7 +104,7 @@ impl<T> Spsc<T> {
             tail: CachePadded::new(AtomicU64::new(0)),
             buffer: buf,
             capacity: size + 1,
-            is_closed: AtomicBool::new(false),
+            closed: AtomicBool::new(false),
             receiver: Waker::new(),
             sender: Waker::new(),
         }
@@ -123,16 +114,15 @@ impl<T> Spsc<T> {
     ///
     /// Returns `Full` or `Disconnected` error if having.
     pub(crate) fn try_send(&mut self, msg: T) -> Result<(), TrySendError<T>> {
-        if unlikely(self.is_closed.load(Ordering::Relaxed)) {
+        if unlikely(self.closed.load(Ordering::Relaxed)) {
             return Err(TrySendError::Disconnected(msg));
         }
 
-        let selector = &mut Selector::default();
-        if !self.get_selector(Operation::Sending, selector) {
+        let (bucket, capture_lap, success) = self.select_bucket(Operation::Sending);
+        if !success {
             return Err(TrySendError::Full(msg));
         }
-        selector.write_message(msg);
-        self.receiver.notify();
+        write_message!(bucket, capture_lap, msg, self.receiver);
         Ok(())
     }
 
@@ -140,12 +130,12 @@ impl<T> Spsc<T> {
     ///
     /// Returns `Empty` error if having.
     pub(crate) fn try_recv(&mut self) -> Result<T, TryRecvError> {
-        let selector = &mut Selector::default();
-        if !self.get_selector(Operation::Receiving, selector) {
+        let (bucket, capture_lap, success) = self.select_bucket(Operation::Receiving);
+        if !success {
             return Err(TryRecvError);
         }
-        let msg = selector.read_message();
-        self.sender.notify();
+        let msg: T;
+        read_message!(bucket, capture_lap, msg, self.sender);
         Ok(msg)
     }
 
@@ -153,20 +143,26 @@ impl<T> Spsc<T> {
     ///
     /// Returns `Disconnected` error if having.
     pub(crate) fn send(&mut self, msg: T) -> Result<(), SendError<T>> {
-        let selector = &mut Selector::default();
+        if unlikely(self.closed.load(Ordering::Relaxed)) {
+            return Err(SendError(msg));
+        }
+
         loop {
-            for _ in 0..N_SPIN {
-                if unlikely(self.is_closed.load(Ordering::Relaxed)) {
-                    return Err(SendError(msg));
-                }
-                if self.get_selector(Operation::Sending, selector) {
-                    selector.write_message(msg);
-                    self.receiver.notify();
-                    return Ok(());
-                }
-                core::hint::spin_loop();
+            let (bucket, capture_lap, success) = self.select_bucket(Operation::Sending);
+            if success {
+                write_message!(bucket, capture_lap, msg, self.receiver);
+                return Ok(());
             }
-            block!(self.is_closed, self.sender, selector);
+
+            let waiter = &Waiter::new(&bucket.lap, capture_lap);
+            let state = waiter.retry_and_snooze(&self.closed, N_RETRY_SPSC);
+            if state == SUCCESS {
+                continue;
+            }
+            if unlikely(state == CLOSED) {
+                return Err(SendError(msg));
+            }
+            block_for_send!(waiter, self.sender, &self.closed, msg);
         }
     }
 
@@ -174,20 +170,27 @@ impl<T> Spsc<T> {
     ///
     /// Returns `Disconnected` error if having.
     pub(crate) fn recv(&mut self) -> Result<T, RecvError> {
-        let selector = &mut Selector::default();
+        if unlikely(self.closed.load(Ordering::Relaxed)) {
+            return Err(RecvError);
+        }
+
         loop {
-            for _ in 0..N_SPIN {
-                if unlikely(self.is_closed.load(Ordering::Relaxed)) {
-                    return Err(RecvError);
-                }
-                if self.get_selector(Operation::Receiving, selector) {
-                    let msg = selector.read_message();
-                    self.sender.notify();
-                    return Ok(msg);
-                }
-                core::hint::spin_loop();
+            let (bucket, capture_lap, success) = self.select_bucket(Operation::Receiving);
+            if success {
+                let msg: T;
+                read_message!(bucket, capture_lap, msg, self.sender);
+                return Ok(msg);
             }
-            block!(self.is_closed, self.receiver, selector);
+
+            let waiter = &Waiter::new(&bucket.lap, capture_lap);
+            let state = waiter.retry_and_snooze(&self.closed, N_RETRY_SPSC);
+            if state == SUCCESS {
+                continue;
+            }
+            if unlikely(state == CLOSED) {
+                return Err(RecvError);
+            }
+            block_for_recv!(waiter, self.receiver, &self.closed);
         }
     }
 
@@ -202,20 +205,20 @@ impl<T> Spsc<T> {
     /// [`try_recv`]: Spsc::try_recv
     #[inline]
     pub(crate) fn close(&mut self) {
-        if !self.is_closed.swap(true, Ordering::Relaxed) {
-            self.receiver.notify();
-            self.sender.notify();
+        if !self.closed.swap(true, Ordering::Relaxed) {
+            self.receiver.close();
+            self.sender.close();
         }
     }
 
     /// Selects one bucket for sending or receiving.
-    fn get_selector(&mut self, operation: Operation, selector: &mut Selector) -> bool {
+    fn select_bucket(&mut self, operation: Operation) -> (&Bucket<T>, u32, bool) {
         match operation {
             Operation::Sending => {
-                get_selector!(self.tail, self.buffer, self.capacity, selector);
+                select_bucket!(self.tail, self.buffer, self.capacity);
             }
             Operation::Receiving => {
-                get_selector!(self.head, self.buffer, self.capacity, selector);
+                select_bucket!(self.head, self.buffer, self.capacity);
             }
         }
     }

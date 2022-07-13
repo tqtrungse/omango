@@ -20,33 +20,63 @@
 
 use std::cell::UnsafeCell;
 use std::mem::MaybeUninit;
-use std::ptr;
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::AtomicU32;
 
 #[macro_export]
-macro_rules! block {
-    ($is_closed:expr, $waker:expr, $selector:expr) => {
-        let waiter = Waiter::new();
-        let out_condition = || {
-            if unlikely($is_closed.load(Ordering::Relaxed)) {
-                return true;
-            }
-            unsafe {
-                let bucket = &*($selector.ptr as *const Bucket<T>);
-                if bucket.lap.load(Ordering::Acquire) != $selector.lap {
-                    return true;
-                }
-                false
-            }
+macro_rules! write_message {
+    ($bucket:expr, $lap:expr, $msg:expr, $recv_waker:expr) => {
+        unsafe { $bucket.msg.get().write(MaybeUninit::new($msg)); }
+        // Make the element available for reading.
+        $bucket.lap.store($lap.wrapping_add(1), Ordering::Release);
+        $recv_waker.notify();
+    };
+}
+
+#[macro_export]
+macro_rules! read_message {
+    ($bucket:expr, $lap:expr, $msg:expr, $send_waker:expr) => {
+        unsafe {
+            // We own the element, do non-atomic read and remove.
+            $msg = $bucket.msg.get().read().assume_init();
         };
-        if $waker.register(&waiter, out_condition) {
-            waiter.sleep(out_condition);
-            $waker.unregister(&waiter);
+        // Make the element available for writing.
+        $bucket.lap.store($lap.wrapping_add(1), Ordering::Release);
+        $send_waker.notify();
+    };
+}
+
+#[macro_export]
+macro_rules! block_for_send {
+    ($waiter:expr, $send_waker:expr, $closed:expr, $msg:expr) => {
+        if $send_waker.register($waiter) {
+            let state = $waiter.sleep($closed);
+            $send_waker.unregister($waiter);
+            if unlikely(state == CLOSED) {
+                return Err(SendError($msg));
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! block_for_recv {
+    ($waiter:expr, $recv_waker:expr, $closed:expr) => {
+        if $recv_waker.register($waiter) {
+            let state = $waiter.sleep($closed);
+            $recv_waker.unregister($waiter);
+            if unlikely(state == CLOSED) {
+                return Err(RecvError);
+            }
         }
     };
 }
 
 pub(crate) const N_SPIN: u8 = 128;
+pub(crate) const N_RETRY_MPMC: u8 = 2;
+pub(crate) const N_RETRY_SPSC: u8 = 1;
+pub(crate) const SUCCESS: u8 = 0;
+pub(crate) const FAILED: u8 = 1;
+pub(crate) const CLOSED: u8 = 2;
 
 pub(crate) enum Operation {
     Sending,
@@ -64,56 +94,6 @@ impl<T> Default for Bucket<T> {
         Self {
             lap: AtomicU32::new(0),
             msg: UnsafeCell::new(MaybeUninit::uninit()),
-        }
-    }
-}
-
-/// Captures a lap and a reference to the selected bucket for writing or reading.
-pub(crate) struct Selector {
-    pub(crate) ptr: *const u8,
-    pub(crate) lap: u32,
-}
-
-impl Default for Selector {
-    fn default() -> Self {
-        Self {
-            ptr: ptr::null(),
-            lap: 0,
-        }
-    }
-}
-
-impl Selector {
-    /// Writes message into bucket.
-    ///
-    /// Also wakes up one blocking receiver if having.
-    #[inline]
-    pub(crate) fn write_message<T>(&self, msg: T) {
-        unsafe {
-            let bucket = &*(self.ptr as *const Bucket<T>);
-
-            // We own the element, do non-atomic write.
-            bucket.msg.get().write(MaybeUninit::new(msg));
-
-            // Make the element available for reading.
-            bucket.lap.store(self.lap + 1, Ordering::Release);
-        }
-    }
-
-    /// Reads and removes message from bucket.
-    ///
-    /// Also wakes up one blocking sender if having.
-    #[inline]
-    pub(crate) fn read_message<T>(&self) -> T {
-        unsafe {
-            let bucket = &*(self.ptr as *const Bucket<T>);
-
-            // We own the element, do non-atomic read and remove.
-            let msg = bucket.msg.get().read().assume_init();
-
-            // Make the element available for writing.
-            bucket.lap.store(self.lap + 1, Ordering::Release);
-            msg
         }
     }
 }

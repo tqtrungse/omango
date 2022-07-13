@@ -199,7 +199,6 @@ use std::sync::Arc;
 use crate::error::{RecvError, SendError, TryRecvError, TrySendError};
 use crate::mpmc::queue::Mpmc;
 
-mod spinlock;
 mod waker;
 mod queue;
 
