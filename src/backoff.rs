@@ -54,6 +54,11 @@ impl Backoff {
         Backoff { step: Cell::new(0) }
     }
 
+    #[inline]
+    pub(crate) fn reset(&self) {
+        self.step.set(0);
+    }
+
     /// Backs off in a lock-free loop.
     ///
     /// This method should be used when we need to retry an operation because another thread made
