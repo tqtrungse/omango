@@ -157,7 +157,7 @@ fn spsc_no_capacity() {
 
 #[test]
 fn mpsc_no_capacity() {
-    let amt = 10000;
+    let amt = 30000;
     let nthreads = (2 * num_cpus::get()) - 1;
     let (tx, rx) = omango::mpmc::bounded(0);
 
@@ -176,7 +176,7 @@ fn mpsc_no_capacity() {
 
 #[test]
 fn mpmc_no_capacity() {
-    let amt = 10000;
+    let amt = 50000;
     let nthreads_send = num_cpus::get() - 1;
     let nthreads_recv = num_cpus::get() - 1;
     let (tx, rx) = omango::mpmc::bounded(0);
