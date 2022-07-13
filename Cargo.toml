@@ -1,6 +1,6 @@
 [package]
 name = "omango"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Trung <tqtrungse@gmail.com>"]
 edition = "2021"
 description = "Lock-free bounded SPSC and MPMC channel"
@@ -15,12 +15,13 @@ categories = ["algorithms", "concurrency", "data-structures"]
 criterion = "0.3.5"
 num_cpus = "1.13.1"
 flume = "0.10.12"
-crossbeam-channel = "0.5.4"
+crossbeam-channel = "0.5.5"
 rtrb = "0.2.2"
 ringbuf = "0.2.8"
 
 [dependencies]
 likely_stable = "0.1.2"
+parking_lot = "0.12.1"
 
 [[bench]]
 name = "benchmarks"
