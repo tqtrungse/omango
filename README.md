@@ -88,7 +88,7 @@ license. See [LICENSE](LICENSE) for more information.
 
 ## Reference
 
-* [Blog of Dmitry Vyukov](https://docs.google.com/document/d/1yIAYmbvL3JxOKOjuCyon7JhW4cSv1wy5hC0ApeGMV9s/pub)
 * [Crossbeam-Channel](https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-channel)
-* [CppCon 2017: C++ atomics, from basic to advanced](https://www.youtube.com/watch?v=ZQFzMfHIxng)
+* [Blog of Dmitry Vyukov](https://docs.google.com/document/d/1yIAYmbvL3JxOKOjuCyon7JhW4cSv1wy5hC0ApeGMV9s/pub)
 * [The cache coherence protocols](https://www.sciencedirect.com/topics/engineering/cache-coherence)
+* [CppCon 2017: C++ atomics, from basic to advanced](https://www.youtube.com/watch?v=ZQFzMfHIxng)
