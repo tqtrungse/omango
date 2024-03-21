@@ -17,12 +17,12 @@
 
 This is a concurrency library.<br />
 
-The crate provides a lock-free bounded single-producer-single-consumer channel and
+The crate provides a lock-free bounded and unbounded single-producer-single-consumer channel and
 multi-producer-multi-consumer channel.<br />
 
-The channels are simple, lightweight, fast and safe in multithreading environment.
+The queues are simple, lightweight, fast and safe in multithreading environment.
 It is faster than [std::mpsc::sync_channel](https://github.com/rust-lang/rust/tree/master/library/std/src/sync/mpsc) 
-and other open source's bounded queue ([ringbuf](https://github.com/agerasev/ringbuf), [flume](https://github.com/zesterer/flume), [crossbeam-channel](https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-channel)). <br/>
+and other open source's bounded queue ([rtrb](https://github.com/mgeier/rtrb), [flume](https://github.com/zesterer/flume), [crossbeam-channel](https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-channel)). <br/>
 
 ## Table of Contents
 
@@ -35,7 +35,7 @@ and other open source's bounded queue ([ringbuf](https://github.com/agerasev/rin
 
 ## Introduction
 
-Both `SPSC` and `MPMC` channel are implemented based on pseudocode of [Dmitry Vyukov's queue](https://docs.google.com/document/d/1yIAYmbvL3JxOKOjuCyon7JhW4cSv1wy5hC0ApeGMV9s/pub).
+Both `SPSC` and `MPMC` queue are implemented based on pseudocode of [Dmitry Vyukov](https://docs.google.com/document/d/1yIAYmbvL3JxOKOjuCyon7JhW4cSv1wy5hC0ApeGMV9s/pub).
 The implementation way is exactly the same. But there are still some differences between them about wait-retry and blocking.<br />
 
 `MPMC` is high contention multithreading environment. If the retry is continuous and immediate, the CPU cache coherence
@@ -43,17 +43,24 @@ will be increased rapidly and decrease performance. Therefore, we must wait then
 However, this thing is unsuitable in `SPSC` is lower contention multithreading environment (Just 2 threads).
 In `SPSC`, the immediate retry still guarantees performance.<br />
 
-The blocking management and optimization in `MPMC` is more complex than `SPSC` 
-in spite of the same implementation idea.<br />
+Both `SPSC` and `MPMC` queue can be used as channels.<br /><br />
 
-Both `SPSC` and `MPMC` channel can be used as queues.<br />
+#### Compared with version 0.1.*
+
+* Performance is better.
+
+
+* Supported unbounded queues (SPSC + MPMC).
+
+
+* Can use `recv` to get remaining items when the queue was closed.
 
 ## Usage
 
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-omango = "0.1.4"
+omango = "0.2.0"
 ```
 
 ## Compatibility
@@ -63,7 +70,7 @@ The minimum supported Rust version is 1.49.
 ## Benchmarks
 
 Tests were performed on an Intel Core I5 with 4 cores running Windows 10 and 
-M1 with 8 cores running MacOS BigSur 11.3.
+M1 with 8 cores running macOS BigSur 11.3.
 
 # <img src="./misc/SPSC.png" alt="Omango benchmarks SPSC" width="100%"/>
 # <img src="./misc/MPSC.png" alt="Omango benchmarks MPSC" width="100%"/>
@@ -74,23 +81,9 @@ M1 with 8 cores running MacOS BigSur 11.3.
 The crate is licensed under the terms of the MIT
 license. See [LICENSE](LICENSE) for more information.
 
-#### Third party software
-
-This product includes copies and modifications of software developed by third parties:
-
-* [src/backoff.rs](src/backoff.rs) includes copies and modifications of code from Crossbeam-Utils,
-  licensed under the MIT License and the Apache License, Version 2.0.
-
-* [src/cache_padded.rs](src/cache_padded.rs) includes copies and modifications of code from Crossbeam-Utils,
-  licensed under the MIT License and the Apache License, Version 2.0.
-
-See the source code files for more details.
-
-The third party licenses can be found in [here](https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-utils#LICENSE).
-
 ## Reference
 
-* [Dmitry Vyukov's queue](https://docs.google.com/document/d/1yIAYmbvL3JxOKOjuCyon7JhW4cSv1wy5hC0ApeGMV9s/pub)
+* [Blog of Dmitry Vyukov](https://docs.google.com/document/d/1yIAYmbvL3JxOKOjuCyon7JhW4cSv1wy5hC0ApeGMV9s/pub)
 * [Crossbeam-Channel](https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-channel)
 * [CppCon 2017: C++ atomics, from basic to advanced](https://www.youtube.com/watch?v=ZQFzMfHIxng)
 * [The cache coherence protocols](https://www.sciencedirect.com/topics/engineering/cache-coherence)
