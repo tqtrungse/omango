@@ -22,6 +22,11 @@ use std::thread;
 
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 
+use ringbuf::{
+    HeapRb,
+    traits::{Consumer, Producer, Split},
+};
+
 fn omango_spsc_block() {
     let (tx, rx) = omango::queue::spsc::bounded(1023);
     let thread = thread::spawn(move || {
@@ -811,32 +816,32 @@ fn rtrb_spsc_nonblock() {
     thread.join().unwrap();
 }
 
-// fn ringbuf_spsc_nonblock() {
-//     let rb = ringbuf::RingBuffer::<i32>::new(1024);
-//     let (mut tx, mut rx) = rb.split();
-//     let thread = thread::spawn(move || {
-//         for _ in 1..2000 {
-//             loop {
-//                 match tx.push(1) {
-//                     Ok(()) => break,
-//                     Err(_) => continue
-//                 }
-//             }
-//         }
-//     });
-//     for _ in 1..2000 {
-//         loop {
-//             match rx.pop() {
-//                 Some(v) => {
-//                     assert_eq!(v, 1);
-//                     break;
-//                 }
-//                 None => continue
-//             }
-//         }
-//     }
-//     thread.join().unwrap();
-// }
+fn ringbuf_spsc_nonblock() {
+    let rb = HeapRb::<i32>::new(1024);
+    let (mut tx, mut rx) = rb.split();
+    let thread = thread::spawn(move || {
+        for _ in 1..2000 {
+            loop {
+                match tx.try_push(1) {
+                    Ok(()) => break,
+                    Err(_) => continue
+                }
+            }
+        }
+    });
+    for _ in 1..2000 {
+        loop {
+            match rx.try_pop() {
+                Some(v) => {
+                    assert_eq!(v, 1);
+                    break;
+                }
+                None => continue
+            }
+        }
+    }
+    thread.join().unwrap();
+}
 
 fn bench_spsc_block(c: &mut Criterion) {
     let mut group = c.benchmark_group("SPSC-Block");
@@ -864,8 +869,8 @@ fn bench_spsc_nonblock(c: &mut Criterion) {
                              |b| b.iter(crossbeam_spsc_block));
         group.bench_function(BenchmarkId::new("Rtrb", i),
                              |b| b.iter(rtrb_spsc_nonblock));
-        // group.bench_function(BenchmarkId::new("Ringbuf", &i),
-        //                      |b| b.iter(ringbuf_spsc_nonblock));
+        group.bench_function(BenchmarkId::new("Ringbuf", &i),
+                             |b| b.iter(ringbuf_spsc_nonblock));
         group.bench_function(BenchmarkId::new("Omango", i),
                              |b| b.iter(omango_spsc_nonblock));
     }

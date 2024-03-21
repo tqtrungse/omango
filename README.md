@@ -22,7 +22,12 @@ multi-producer-multi-consumer channel.<br />
 
 The queues are simple, lightweight, fast and safe in multithreading environment.
 It is faster than [std::mpsc::sync_channel](https://github.com/rust-lang/rust/tree/master/library/std/src/sync/mpsc) 
-and other open source's bounded queue ([rtrb](https://github.com/mgeier/rtrb), [flume](https://github.com/zesterer/flume), [crossbeam-channel](https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-channel)). <br/>
+and other open source's bounded queue (
+    [ringbuf](https://github.com/agerasev/ringbuf), 
+    [rtrb](https://github.com/mgeier/rtrb), 
+    [flume](https://github.com/zesterer/flume), 
+    [crossbeam-channel](https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-channel)
+). <br/>
 
 ## Table of Contents
 
