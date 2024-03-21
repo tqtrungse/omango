@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Trung <tqtrungse@gmail.com>
+// Copyright (c) 2024 Trung Tran <tqtrungse@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,10 +18,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-pub mod spsc;
-pub mod mpmc;
-pub mod error;
+// use std::thread;
+// use std::time::Duration;
 
-mod common;
-pub mod backoff;
-pub mod cache_padded;
+pub mod queue;
+
+
+// fn main() {
+//     let (tx, rx) = crate::queue::spsc::unbounded();
+//     let thread = thread::spawn(move || {
+//         thread::sleep(Duration::from_millis(1000));
+//         for _ in 0..10000 {
+//             tx.send(1);
+//         }
+//     });
+//     for _ in 0..10000 {
+//         assert_eq!(rx.recv(), Ok(1));
+//     }
+//     thread.join().unwrap();
+// }
