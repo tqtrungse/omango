@@ -1,28 +1,29 @@
 [package]
 name = "omango"
-version = "0.1.4"
-authors = ["Trung <tqtrungse@gmail.com>"]
+version = "0.2.0"
+authors = ["Trung Tran <tqtrungse@gmail.com>"]
 edition = "2021"
-description = "Lock-free bounded SPSC and MPMC channel"
+description = "Lock-free collections"
 license = "MIT"
 repository = "https://github.com/tqtrungse/omango"
 homepage = "https://github.com/tqtrungse/omango"
 documentation = "https://docs.rs/omango"
-keywords = ["channel", "mpmc", "spsc", "message"]
-categories = ["algorithms", "concurrency", "data-structures"]
+keywords = ["mpmc", "spsc", "bounded", "unbounded"]
+categories = ["concurrency", "algorithms", "data-structures"]
 
 [dev-dependencies]
-criterion = "0.3.5"
-num_cpus = "1.13.1"
-flume = "0.10.12"
-crossbeam-channel = "0.5.5"
-rtrb = "0.2.2"
-ringbuf = "0.2.8"
+rtrb = "0.3.0"
+flume = "0.11.0"
+num_cpus = "1.16.0"
+ringbuf = "0.4.0-rc.2"
+crossbeam-channel = "0.5.11"
+criterion = { version = "0.5.1", features = ["default", "stable"] }
 
 [dependencies]
-likely_stable = "0.1.2"
 parking_lot = "0.12.1"
+omango-util = "0.1.0"
+omango-futex = "0.1.0"
 
 [[bench]]
-name = "benchmarks"
+name = "bench_queue"
 harness = false
