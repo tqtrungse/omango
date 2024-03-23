@@ -80,7 +80,7 @@ M1 with 8 cores running macOS BigSur 11.3.
 # <img src="./misc/SPSC.png" alt="Omango benchmarks SPSC" width="100%"/>
 # <img src="./misc/MPSC.png" alt="Omango benchmarks MPSC" width="100%"/>
 # <img src="./misc/MPMC.png" alt="Omango benchmarks MPMC" width="100%"/>
-# <img src="./misc/unbounded.png" alt="Omango benchmarks Unbounded" width="100%"/>
+# <img src="./misc/Unbounded.png" alt="Omango benchmarks Unbounded" width="100%"/>
 
 ## License
 
