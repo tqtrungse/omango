@@ -35,7 +35,6 @@ use crate::{
         error::{RecvError, SendError, TrySendError},
     },
 };
-use crate::queue::waker::Checker;
 
 const SUB_QUEUE_SIZE: u32 = 1024;
 

@@ -704,8 +704,6 @@ impl<T: Send> UReceiver<T> {
 }
 
 mod test {
-    use std::thread;
-
     use crate::queue::mpmc::{bounded, BReceiver, BSender, unbounded, UReceiver, USender};
 
     fn is_send<T: Send>() {}
@@ -762,7 +760,7 @@ mod test {
     fn send_recv_threads() {
         // Bounded.
         let (tx_b, rx_b) = bounded(4);
-        let thread = thread::spawn(move || {
+        let thread = std::thread::spawn(move || {
             tx_b.send(1).unwrap();
         });
         assert_eq!(rx_b.recv().unwrap(), 1);
@@ -770,7 +768,7 @@ mod test {
 
         // Unbounded.
         let (tx_u, rx_u) = unbounded();
-        let thread = thread::spawn(move || {
+        let thread = std::thread::spawn(move || {
             tx_u.send(1).unwrap();
         });
         assert_eq!(rx_u.recv().unwrap(), 1);
@@ -780,15 +778,15 @@ mod test {
     #[test]
     fn send_recv_threads_no_capacity() {
         let (tx, rx) = bounded(0);
-        let thread = thread::spawn(move || {
+        let thread = std::thread::spawn(move || {
             tx.send(1).unwrap();
             tx.send(2).unwrap();
         });
 
-        thread::sleep(std::time::Duration::from_millis(100));
+        std::thread::sleep(std::time::Duration::from_millis(100));
         assert_eq!(rx.recv().unwrap(), 1);
 
-        thread::sleep(std::time::Duration::from_millis(100));
+        std::thread::sleep(std::time::Duration::from_millis(100));
         assert_eq!(rx.recv().unwrap(), 2);
 
         thread.join().unwrap();
@@ -798,7 +796,7 @@ mod test {
     fn send_close_gets_none() {
         // Bounded.
         let (tx_b, rx_b) = bounded::<i32>(1);
-        let thread = thread::spawn(move || {
+        let thread = std::thread::spawn(move || {
             assert!(rx_b.recv().is_err());
         });
         tx_b.close();
@@ -806,7 +804,7 @@ mod test {
 
         // Unbounded.
         let (tx_u, rx_u) = unbounded::<i32>();
-        let thread = thread::spawn(move || {
+        let thread = std::thread::spawn(move || {
             assert!(rx_u.recv().is_err());
         });
         tx_u.close();
@@ -821,7 +819,7 @@ mod test {
 
         for _ in 0..nthreads {
             let txc = tx.clone();
-            thread::spawn(move || {
+            std::thread::spawn(move || {
                 for _ in 0..amt {
                     assert_eq!(txc.send(1), Ok(()));
                 }
@@ -843,7 +841,7 @@ mod test {
 
         for _ in 0..nthreads_send {
             let txc = tx.clone();
-            let child = thread::spawn(move || {
+            let child = std::thread::spawn(move || {
                 for _ in 0..amt {
                     assert_eq!(txc.send(1), Ok(()));
                 }
@@ -853,7 +851,7 @@ mod test {
 
         for _ in 0..nthreads_recv {
             let rxc = rx.clone();
-            let thread = thread::spawn(move || {
+            let thread = std::thread::spawn(move || {
                 for _ in 0..amt {
                     assert_eq!(rxc.recv(), Ok(1));
                 }
