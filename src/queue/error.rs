@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Trung <tqtrungse@gmail.com>
+// Copyright (c) 2024 Trung Tran <tqtrungse@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -93,7 +93,7 @@ impl<T> TrySendError<T> {
     /// # Examples
     ///
     /// ```
-    /// use omango::mpmc::bounded;
+    /// use omango::queue::mpmc::bounded;
     ///
     /// let (tx, rx) = bounded(0);
     ///
