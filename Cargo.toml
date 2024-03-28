@@ -1,6 +1,6 @@
 [package]
 name = "omango"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Trung Tran <tqtrungse@gmail.com>"]
 edition = "2021"
 description = "Lock-free collections"
@@ -22,7 +22,7 @@ criterion = { version = "0.5.1", features = ["default", "stable"] }
 [dependencies]
 parking_lot = "0.12.1"
 omango-util = "0.1.0"
-omango-futex = "0.1.0"
+omango-futex = "0.1.1"
 
 [[bench]]
 name = "bench_queue"
