@@ -65,12 +65,12 @@ Both `SPSC` and `MPMC` queue can be used as channels.<br /><br />
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-omango = "0.2.2"
+omango = "0.2.3"
 ```
 
 ## Compatibility
 
-The minimum supported Rust version is 1.49.
+The minimum supported Rust version is `1.57`.
 
 ## Benchmarks
 

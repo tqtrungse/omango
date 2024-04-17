@@ -1,6 +1,6 @@
 [package]
 name = "omango"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Trung Tran <tqtrungse@gmail.com>"]
 edition = "2021"
 description = "Lock-free collections"
@@ -8,7 +8,7 @@ license = "MIT"
 repository = "https://github.com/tqtrungse/omango"
 homepage = "https://github.com/tqtrungse/omango"
 documentation = "https://docs.rs/omango"
-keywords = ["mpmc", "spsc", "bounded", "unbounded"]
+keywords = ["mpmc", "spsc", "bounded", "unbounded", "queue"]
 categories = ["concurrency", "algorithms", "data-structures"]
 
 [dev-dependencies]
@@ -21,8 +21,8 @@ criterion = { version = "0.5.1", features = ["default", "stable"] }
 
 [dependencies]
 parking_lot = "0.12.1"
-omango-util = "0.1.0"
-omango-futex = "0.1.1"
+omango-util = "0.1.5"
+omango-futex = "0.1.2"
 
 [[bench]]
 name = "bench_queue"
