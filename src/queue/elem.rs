@@ -31,7 +31,7 @@ pub(crate) struct ElemArr<T> {
 }
 
 impl<T> Default for ElemArr<T> {
-    #[inline]
+    #[inline(always)]
     fn default() -> Self {
         Self {
             lap: AtomicU32::new(0),
@@ -42,19 +42,19 @@ impl<T> Default for ElemArr<T> {
 
 /// Element for unbounded queue.
 impl<T> ElemArr<T> {
-    #[inline]
+    #[inline(always)]
     pub(crate) fn load_lap(&self) -> u32 {
         self.lap.load(Ordering::Acquire)
     }
 
-    #[inline]
+    #[inline(always)]
     pub(crate) fn write(&self, lap: u32, msg: T) {
         unsafe { self.msg.get().write(MaybeUninit::new(msg)); }
         // Make the element available for reading.
         self.lap.store(lap, Ordering::Release);
     }
 
-    #[inline]
+    #[inline(always)]
     pub(crate) fn read(&self, lap: u32) -> T {
         // We own the element, do non-atomic read and remove.
         let msg: T;
@@ -65,60 +65,8 @@ impl<T> ElemArr<T> {
         msg
     }
 
-    #[inline]
+    #[inline(always)]
     pub(crate) fn atom_lap(&self) -> *const AtomicU32 {
         &self.lap
     }
 }
-
-// pub(crate) struct ElemList<T> {
-//     size: usize,
-//     msg: UnsafeCell<MaybeUninit<T>>,
-//     next: AtomicPtr<ElemList<T>>,
-// }
-//
-// impl<T> Default for ElemList<T> {
-//     #[inline]
-//     fn default() -> Self {
-//         let mut elem = ElemList {
-//             size: 0,
-//             msg: UnsafeCell::new(MaybeUninit::uninit()),
-//             next: AtomicPtr::new(null_mut()),
-//         };
-//         elem.size = std::mem::size_of_val(&elem);
-//         elem
-//     }
-// }
-//
-// impl<T> ElemList<T> {
-//     #[inline]
-//     pub(crate) fn new(msg: T) -> Self {
-//         let mut elem = ElemList {
-//             size: 0,
-//             msg: UnsafeCell::new(MaybeUninit::new(msg)),
-//             next: AtomicPtr::new(null_mut()),
-//         };
-//         elem.size = std::mem::size_of_val(&elem);
-//         elem
-//     }
-//
-//     #[inline]
-//     pub(crate) fn get_next(&self) -> *mut ElemList<T> {
-//         self.next.load(Ordering::Relaxed)
-//     }
-//
-//     #[inline]
-//     pub(crate) fn set_next(&self, elem: *mut ElemList<T>) {
-//         self.next.store(elem, Ordering::Relaxed);
-//     }
-//
-//     #[inline]
-//     pub(crate) fn move_value(&mut self) -> T {
-//         unsafe { self.msg.get().read().assume_init() }
-//     }
-//
-//     #[inline]
-//     pub(crate) fn size(&self) -> usize {
-//         self.size
-//     }
-// }

@@ -63,7 +63,7 @@ use crate::queue::{
 /// thread::sleep(Duration::from_secs(1));
 /// assert_eq!(rx.recv(), Ok(1));
 /// ```
-#[inline]
+#[inline(always)]
 pub fn bounded<T: Send>(size: u32) -> (BSender<T>, BReceiver<T>) {
     let queue = Arc::new(UnsafeCell::new(MpmcBounded::new(size)));
     (BSender::new(queue.clone()), BReceiver::new(queue))
@@ -98,14 +98,14 @@ unsafe impl<T: Send> Send for BSender<T> {}
 unsafe impl<T: Send> Sync for BSender<T> {}
 
 impl<T: Send> Clone for BSender<T> {
-    #[inline]
+    #[inline(always)]
     fn clone(&self) -> Self {
         Self { inner: self.inner.clone() }
     }
 }
 
 impl<T: Send> BSender<T> {
-    #[inline]
+    #[inline(always)]
     fn new(inner: Arc<UnsafeCell<MpmcBounded<T>>>) -> Self <> {
         Self { inner }
     }
@@ -118,10 +118,9 @@ impl<T: Send> BSender<T> {
     /// # Examples
     ///
     /// ```
-    /// use omango::queue::mpmc::bounded;
     /// use omango::queue::error::TrySendError;
     ///
-    /// let (tx, rx) = bounded(0);
+    /// let (tx, rx) = omango::queue::mpmc::bounded(0);
     ///
     /// assert_eq!(tx.try_send(1), Ok(()));
     /// assert_eq!(tx.try_send(2), Err(TrySendError::Full(2)));
@@ -129,7 +128,7 @@ impl<T: Send> BSender<T> {
     /// rx.close();
     /// assert_eq!(tx.try_send(3), Err(TrySendError::Disconnected(3)));
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn try_send(&self, value: T) -> Result<(), TrySendError<T>> {
         unsafe { (*self.inner.get()).try_send(value) }
     }
@@ -163,7 +162,7 @@ impl<T: Send> BSender<T> {
     /// assert_eq!(tx.send(2), Ok(()));
     /// assert_eq!(tx.send(3), Err(SendError(3)));
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn send(&self, value: T) -> Result<(), SendError<T>> {
         unsafe { (*self.inner.get()).send(value, (*self.inner.get()).cast()) }
     }
@@ -190,12 +189,7 @@ impl<T: Send> BSender<T> {
     /// thread::sleep(Duration::from_millis(500));
     /// assert_eq!(tx2.length(), 1);
     /// ```
-    ///
-    /// [`send`]: BSender::send
-    /// [`try_send`]: BSender::try_send
-    /// [`recv`]: BReceiver::recv
-    /// [`try_recv`]: BReceiver::try_recv
-    #[inline]
+    #[inline(always)]
     pub fn length(&self) -> u32 {
         unsafe { (*self.inner.get()).length() }
     }
@@ -230,7 +224,7 @@ impl<T: Send> BSender<T> {
     /// [`try_send`]: BSender::try_send
     /// [`recv`]: BReceiver::recv
     /// [`try_recv`]: BReceiver::try_recv
-    #[inline]
+    #[inline(always)]
     pub fn close(&self) {
         unsafe { (*self.inner.get()).close() }
     }
@@ -255,7 +249,7 @@ impl<T: Send> BSender<T> {
     /// thread::sleep(Duration::from_millis(500));
     /// assert_eq!(rx.is_close(), true);
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn is_close(&self) -> bool {
         unsafe { (*self.inner.get()).is_close() }
     }
@@ -291,14 +285,14 @@ unsafe impl<T: Send> Send for BReceiver<T> {}
 unsafe impl<T: Send> Sync for BReceiver<T> {}
 
 impl<T: Send> Clone for BReceiver<T> {
-    #[inline]
+    #[inline(always)]
     fn clone(&self) -> Self {
         Self { inner: self.inner.clone() }
     }
 }
 
 impl<T: Send> BReceiver<T> {
-    #[inline]
+    #[inline(always)]
     fn new(inner: Arc<UnsafeCell<MpmcBounded<T>>>) -> Self <> {
         Self { inner }
     }
@@ -323,17 +317,16 @@ impl<T: Send> BReceiver<T> {
     /// assert_eq!(rx.try_recv(), Ok(5));
     /// assert_eq!(rx.try_recv(), Err(TryRecvError));
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn try_recv(&self) -> Result<T, TryRecvError> {
         unsafe { (*self.inner.get()).try_recv() }
     }
 
-    /// Blocks the current thread until a message is received or the queue is empty and
-    /// disconnected.
+    /// Blocks the current thread until a message is received.
     ///
     /// If the queue is empty and not disconnected, this call will block until the reception
-    /// operation can proceed. If the queue is empty and becomes disconnected, this call will
-    /// wake up and return an error.
+    /// operation can proceed. If the queue becomes disconnected, this call will be woken up
+    /// then it will retry if the queue is still empty, an error will return.
     ///
     /// If called on a zero-capacity queue, this method will wait for a send operation to appear
     /// on the other side of the queue.
@@ -358,7 +351,7 @@ impl<T: Send> BReceiver<T> {
     /// assert_eq!(rx.recv(), Ok(5));
     /// assert_eq!(rx.recv(), Err(RecvError));
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn recv(&self) -> Result<T, RecvError> {
         unsafe { (*self.inner.get()).recv((*self.inner.get()).cast()) }
     }
@@ -385,12 +378,7 @@ impl<T: Send> BReceiver<T> {
     ///
     /// assert_eq!(tx2.length(), 1);
     /// ```
-    ///
-    /// [`send`]: BSender::send
-    /// [`try_send`]: BSender::try_send
-    /// [`recv`]: BReceiver::recv
-    /// [`try_recv`]: BReceiver::try_recv
-    #[inline]
+    #[inline(always)]
     pub fn length(&self) -> u32 {
         unsafe { (*self.inner.get()).length() }
     }
@@ -425,7 +413,7 @@ impl<T: Send> BReceiver<T> {
     /// [`try_send`]: BSender::try_send
     /// [`recv`]: BReceiver::recv
     /// [`try_recv`]: BReceiver::try_recv
-    #[inline]
+    #[inline(always)]
     pub fn close(&self) {
         unsafe { (*self.inner.get()).close() }
     }
@@ -450,7 +438,7 @@ impl<T: Send> BReceiver<T> {
     /// thread::sleep(Duration::from_millis(500));
     /// assert_eq!(rx.is_close(), true);
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn is_close(&self) -> bool {
         unsafe { (*self.inner.get()).is_close() }
     }
@@ -488,7 +476,7 @@ impl<T: Send> BReceiver<T> {
 /// assert_eq!(rx.recv(), Ok(1));
 /// assert_eq!(rx.recv(), Ok(2));
 /// ```
-#[inline]
+#[inline(always)]
 pub fn unbounded<T: Send>() -> (USender<T>, UReceiver<T>) {
     let queue = Arc::new(UnsafeCell::new(MpmcUnbounded::default()));
     (USender::new(queue.clone()), UReceiver::new(queue))
@@ -523,19 +511,19 @@ unsafe impl<T: Send> Send for USender<T> {}
 unsafe impl<T: Send> Sync for USender<T> {}
 
 impl<T: Send> Clone for USender<T> {
-    #[inline]
+    #[inline(always)]
     fn clone(&self) -> Self {
         Self { inner: self.inner.clone() }
     }
 }
 
 impl<T: Send> USender<T> {
-    #[inline]
+    #[inline(always)]
     fn new(inner: Arc<UnsafeCell<MpmcUnbounded<T>>>) -> Self <> {
         Self { inner }
     }
 
-    /// Attempts to send a message into the queue without blocking.
+    /// Attempts to send a message into the queue without blocking (unbounded).
     ///
     /// This method will either send a message into the queue immediately or return an error if
     /// the queue is full or disconnected. The returned error contains the original message.
@@ -543,17 +531,16 @@ impl<T: Send> USender<T> {
     /// # Examples
     ///
     /// ```
-    /// use omango::queue::mpmc::unbounded;
     /// use omango::queue::error::SendError;
     ///
-    /// let (tx, rx) = unbounded();
+    /// let (tx, rx) = omango::queue::mpmc::unbounded();
     ///
     /// assert_eq!(tx.send(1), Ok(()));
     ///
     /// rx.close();
     /// assert_eq!(tx.send(3), Err(SendError(3)));
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn send(&self, value: T) -> Result<(), SendError<T>> {
         unsafe { (*self.inner.get()).send(value) }
     }
@@ -586,7 +573,7 @@ impl<T: Send> USender<T> {
     ///
     /// [`send`]: USender::send
     /// [`recv`]: UReceiver::recv
-    #[inline]
+    #[inline(always)]
     pub fn close(&self) {
         unsafe { (*self.inner.get()).close() }
     }
@@ -622,14 +609,14 @@ unsafe impl<T: Send> Send for UReceiver<T> {}
 unsafe impl<T: Send> Sync for UReceiver<T> {}
 
 impl<T: Send> Clone for UReceiver<T> {
-    #[inline]
+    #[inline(always)]
     fn clone(&self) -> Self {
         Self { inner: self.inner.clone() }
     }
 }
 
 impl<T: Send> UReceiver<T> {
-    #[inline]
+    #[inline(always)]
     fn new(inner: Arc<UnsafeCell<MpmcUnbounded<T>>>) -> Self <> {
         Self { inner }
     }
@@ -664,7 +651,7 @@ impl<T: Send> UReceiver<T> {
     /// assert_eq!(rx.recv(), Ok(5));
     /// assert_eq!(rx.recv(), Err(RecvError));
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn recv(&self) -> Result<T, RecvError> {
         unsafe { (*self.inner.get()).recv() }
     }
@@ -697,38 +684,38 @@ impl<T: Send> UReceiver<T> {
     ///
     /// [`send`]: USender::send
     /// [`recv`]: UReceiver::recv
-    #[inline]
+    #[inline(always)]
     pub fn close(&self) {
         unsafe { (*self.inner.get()).close() }
     }
 }
 
 mod test {
-    use crate::queue::mpmc::{bounded, BReceiver, BSender, unbounded, UReceiver, USender};
-
-    fn is_send<T: Send>() {}
-
     #[test]
     fn bounds() {
-        is_send::<BSender<i32>>();
-        is_send::<BReceiver<i32>>();
+        fn is_send<T: Send>() {}
+        
+        is_send::<crate::queue::mpmc::BSender<i32>>();
+        is_send::<crate::queue::mpmc::BReceiver<i32>>();
     }
 
     #[test]
     fn unbound() {
-        is_send::<USender<i32>>();
-        is_send::<UReceiver<i32>>();
+        fn is_send<T: Send>() {}
+        
+        is_send::<crate::queue::mpmc::USender<i32>>();
+        is_send::<crate::queue::mpmc::UReceiver<i32>>();
     }
 
     #[test]
     fn send_recv() {
         // Bounded.
-        let (tx_b, rx_b) = bounded(3);
+        let (tx_b, rx_b) = crate::queue::mpmc::bounded(3);
         tx_b.try_send(1).unwrap();
         assert_eq!(rx_b.try_recv().unwrap(), 1);
 
         // Unbounded
-        let (tx_u, rx_u) = unbounded();
+        let (tx_u, rx_u) = crate::queue::mpmc::unbounded();
         tx_u.send(1).unwrap();
         assert_eq!(rx_u.recv().unwrap(), 1);
     }
@@ -736,7 +723,7 @@ mod test {
     #[test]
     fn send_shared_recv() {
         // Bounded.
-        let (tx_b1, rx_b) = bounded(4);
+        let (tx_b1, rx_b) = crate::queue::mpmc::bounded(4);
         let tx_b2 = tx_b1.clone();
 
         tx_b1.send(1).unwrap();
@@ -746,7 +733,7 @@ mod test {
         assert_eq!(rx_b.recv().unwrap(), 2);
 
         // Unbounded.
-        let (tx_u1, rx_u) = unbounded();
+        let (tx_u1, rx_u) = crate::queue::mpmc::unbounded();
         let tx_u2 = tx_u1.clone();
 
         tx_u1.send(1).unwrap();
@@ -759,7 +746,7 @@ mod test {
     #[test]
     fn send_recv_threads() {
         // Bounded.
-        let (tx_b, rx_b) = bounded(4);
+        let (tx_b, rx_b) = crate::queue::mpmc::bounded(4);
         let thread = std::thread::spawn(move || {
             tx_b.send(1).unwrap();
         });
@@ -767,7 +754,7 @@ mod test {
         thread.join().unwrap();
 
         // Unbounded.
-        let (tx_u, rx_u) = unbounded();
+        let (tx_u, rx_u) = crate::queue::mpmc::unbounded();
         let thread = std::thread::spawn(move || {
             tx_u.send(1).unwrap();
         });
@@ -777,7 +764,7 @@ mod test {
 
     #[test]
     fn send_recv_threads_no_capacity() {
-        let (tx, rx) = bounded(0);
+        let (tx, rx) = crate::queue::mpmc::bounded(0);
         let thread = std::thread::spawn(move || {
             tx.send(1).unwrap();
             tx.send(2).unwrap();
@@ -795,7 +782,7 @@ mod test {
     #[test]
     fn send_close_gets_none() {
         // Bounded.
-        let (tx_b, rx_b) = bounded::<i32>(1);
+        let (tx_b, rx_b) = crate::queue::mpmc::bounded::<i32>(1);
         let thread = std::thread::spawn(move || {
             assert!(rx_b.recv().is_err());
         });
@@ -803,7 +790,7 @@ mod test {
         thread.join().unwrap();
 
         // Unbounded.
-        let (tx_u, rx_u) = unbounded::<i32>();
+        let (tx_u, rx_u) = crate::queue::mpmc::unbounded::<i32>();
         let thread = std::thread::spawn(move || {
             assert!(rx_u.recv().is_err());
         });
@@ -815,7 +802,7 @@ mod test {
     fn mpsc_no_capacity() {
         let amt = 30000;
         let nthreads = 7;
-        let (tx, rx) = bounded(0);
+        let (tx, rx) = crate::queue::mpmc::bounded(0);
 
         for _ in 0..nthreads {
             let txc = tx.clone();
@@ -835,7 +822,7 @@ mod test {
         let amt = 50000;
         let nthreads_send = 7;
         let nthreads_recv = 7;
-        let (tx, rx) = bounded(0);
+        let (tx, rx) = crate::queue::mpmc::bounded(0);
         let mut receiving_threads = Vec::new();
         let mut sending_threads = Vec::new();
 

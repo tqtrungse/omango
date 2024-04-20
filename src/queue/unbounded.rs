@@ -29,11 +29,9 @@ use omango_util::{
     hint::{likely, unlikely},
 };
 
-use crate::{
-    queue::{
-        bounded::{Bounded, SpscBounded, MpmcBounded},
-        error::{RecvError, SendError, TrySendError},
-    },
+use crate::queue::{
+    bounded::{Bounded, SpscBounded, MpmcBounded},
+    error::{RecvError, SendError, TrySendError},
 };
 
 const SUB_QUEUE_SIZE: u32 = 1024;
@@ -83,7 +81,7 @@ struct SpscNode<T> {
 }
 
 impl<T> SpscNode<T> {
-    #[inline]
+    #[inline(always)]
     fn new(cap: u32) -> Self {
         Self {
             queue: SpscBounded::new(cap),
@@ -97,19 +95,17 @@ struct Pointer<T> {
 }
 
 impl<T> Pointer<T> {
-    #[inline]
+    #[inline(always)]
     fn new(ptr: *mut SpscNode<T>) -> Self {
-        Self {
-            ptr,
-        }
+        Self { ptr }
     }
 
-    #[inline]
+    #[inline(always)]
     fn get(&self) -> *mut SpscNode<T> {
         self.ptr
     }
 
-    #[inline]
+    #[inline(always)]
     fn set(&mut self, ptr: *mut SpscNode<T>) {
         self.ptr = ptr;
     }
@@ -123,7 +119,7 @@ pub(crate) struct SpscUnbounded<T> {
 }
 
 impl<T> Default for SpscUnbounded<T> {
-    #[inline]
+    #[inline(always)]
     fn default() -> Self {
         let init_node = Box::into_raw(Box::new(SpscNode::new(SUB_QUEUE_SIZE)));
         Self {
@@ -140,13 +136,9 @@ impl<T> SpscUnbounded<T> {
         let tail = self.tail.load(Ordering::Relaxed);
         let result = unsafe { (*tail).queue.try_send(msg) };
 
-        return match result {
-            Ok(()) => {
-                Ok(())
-            }
-            Err(TrySendError::Disconnected(msg)) => {
-                Err(SendError(msg))
-            }
+        match result {
+            Ok(()) => Ok(()),
+            Err(TrySendError::Disconnected(msg)) => Err(SendError(msg)),
             Err(_) => {
                 unsafe { (*tail).queue.close() };
 
@@ -171,7 +163,7 @@ impl<T> SpscUnbounded<T> {
                     }
                 }
             }
-        };
+        }
     }
 
     pub(crate) fn recv(&mut self) -> Result<T, RecvError> {
@@ -220,7 +212,7 @@ struct MpmcNode<T> {
 }
 
 impl<T> MpmcNode<T> {
-    #[inline]
+    #[inline(always)]
     fn new(cap: u32) -> Self {
         Self {
             queue: MpmcBounded::new(cap),
@@ -237,7 +229,7 @@ pub(crate) struct MpmcUnbounded<T> {
 }
 
 impl<T> Default for MpmcUnbounded<T> {
-    #[inline]
+    #[inline(always)]
     fn default() -> Self {
         let init_node = Box::into_raw(Box::new(MpmcNode::new(SUB_QUEUE_SIZE)));
         Self {
@@ -258,9 +250,7 @@ impl<T> MpmcUnbounded<T> {
             let result = unsafe { (*tail).queue.try_send(data) };
 
             match result {
-                Ok(()) => {
-                    return Ok(());
-                }
+                Ok(()) => return Ok(()),
                 Err(TrySendError::Disconnected(msg)) => {
                     if self.closed.load(Ordering::Relaxed) {
                         return Err(SendError(msg));
@@ -337,7 +327,7 @@ impl<T> MpmcUnbounded<T> {
         unsafe { (*next).queue.close(); }
 
         set_close!(self.tail, self.closed, next);
-        
+
         let mut head = self.head.load(Ordering::Relaxed);
         close_current_node!(head);
     }

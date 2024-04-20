@@ -65,7 +65,7 @@ Both `SPSC` and `MPMC` queue can be used as channels.<br /><br />
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-omango = "0.2.3"
+omango = "0.2.4"
 ```
 
 ## Compatibility

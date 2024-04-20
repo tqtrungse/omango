@@ -27,6 +27,7 @@ use ringbuf::{
     traits::{Consumer, Producer, Split},
 };
 
+#[allow(unused)]
 fn omango_spsc_block() {
     let (tx, rx) = omango::queue::spsc::bounded(1023);
     let thread = thread::spawn(move || {
@@ -40,6 +41,7 @@ fn omango_spsc_block() {
     thread.join().unwrap();
 }
 
+#[allow(unused)]
 fn omango_spsc_nonblock() {
     let (tx, rx) = omango::queue::spsc::bounded(1023);
     let thread = thread::spawn(move || {
@@ -66,6 +68,7 @@ fn omango_spsc_nonblock() {
     thread.join().unwrap();
 }
 
+#[allow(unused)]
 fn omango_spsc_unbounded() {
     let (tx, rx) = omango::queue::spsc::unbounded();
     let thread = thread::spawn(move || {
@@ -79,6 +82,7 @@ fn omango_spsc_unbounded() {
     thread.join().unwrap();
 }
 
+#[allow(unused)]
 fn omango_mpsc_block() {
     let (tx, rx) = omango::queue::mpmc::bounded(1023);
     let nthreads = (2 * num_cpus::get()) - 2;
@@ -101,6 +105,7 @@ fn omango_mpsc_block() {
     }
 }
 
+#[allow(unused)]
 fn omango_mpsc_nonblock() {
     let (tx, rx) = omango::queue::mpmc::bounded(1023);
     let nthreads = (2 * num_cpus::get()) - 2;
@@ -142,6 +147,7 @@ fn omango_mpsc_nonblock() {
     }
 }
 
+#[allow(unused)]
 fn omango_mpmc_block() {
     let (tx, rx) = omango::queue::mpmc::bounded(1023);
     let nthreads = num_cpus::get() - 1;
@@ -176,6 +182,7 @@ fn omango_mpmc_block() {
     }
 }
 
+#[allow(unused)]
 fn omango_mpmc_nonblock() {
     let (tx, rx) = omango::queue::mpmc::bounded(1023);
     let nthreads = num_cpus::get() - 1;
@@ -229,6 +236,7 @@ fn omango_mpmc_nonblock() {
     }
 }
 
+#[allow(unused)]
 fn omango_mpmc_unbounded() {
     let (tx, rx) = omango::queue::mpmc::unbounded();
     let nthreads = num_cpus::get() - 1;
@@ -263,6 +271,7 @@ fn omango_mpmc_unbounded() {
     }
 }
 
+#[allow(unused)]
 fn std_spsc_block() {
     let (tx, rx) = std::sync::mpsc::sync_channel(1024);
     let thread = thread::spawn(move || {
@@ -276,6 +285,7 @@ fn std_spsc_block() {
     thread.join().unwrap();
 }
 
+#[allow(unused)]
 fn std_spsc_noblock() {
     let (tx, rx) = std::sync::mpsc::sync_channel(1024);
     let thread = thread::spawn(move || {
@@ -302,6 +312,7 @@ fn std_spsc_noblock() {
     thread.join().unwrap();
 }
 
+#[allow(unused)]
 fn std_mpsc_block() {
     let (tx, rx) = std::sync::mpsc::sync_channel(1024);
     let nthreads = (2 * num_cpus::get()) - 2;
@@ -324,6 +335,7 @@ fn std_mpsc_block() {
     }
 }
 
+#[allow(unused)]
 fn std_mpsc_nonblock() {
     let (tx, rx) = std::sync::mpsc::sync_channel(1024);
     let nthreads = (2 * num_cpus::get()) - 2;
@@ -365,6 +377,7 @@ fn std_mpsc_nonblock() {
     }
 }
 
+#[allow(unused)]
 fn flume_spsc_block() {
     let (tx, rx) = flume::bounded(1024);
     let thread = thread::spawn(move || {
@@ -378,6 +391,7 @@ fn flume_spsc_block() {
     thread.join().unwrap();
 }
 
+#[allow(unused)]
 fn flume_spsc_nonblock() {
     let (tx, rx) = flume::bounded(1024);
     let thread = thread::spawn(move || {
@@ -404,6 +418,7 @@ fn flume_spsc_nonblock() {
     thread.join().unwrap();
 }
 
+#[allow(unused)]
 fn flume_mpsc_block() {
     let (tx, rx) = flume::bounded(1024);
     let nthreads = (2 * num_cpus::get()) - 2;
@@ -426,6 +441,7 @@ fn flume_mpsc_block() {
     }
 }
 
+#[allow(unused)]
 fn flume_mpsc_nonblock() {
     let (tx, rx) = flume::bounded(1024);
     let nthreads = (2 * num_cpus::get()) - 2;
@@ -467,6 +483,7 @@ fn flume_mpsc_nonblock() {
     }
 }
 
+#[allow(unused)]
 fn flume_mpmc_block() {
     let (tx, rx) = flume::bounded(1024);
     let nthreads = num_cpus::get() - 1;
@@ -501,6 +518,7 @@ fn flume_mpmc_block() {
     }
 }
 
+#[allow(unused)]
 fn flume_mpmc_nonblock() {
     let (tx, rx) = flume::bounded(1024);
     let nthreads = num_cpus::get() - 1;
@@ -554,6 +572,7 @@ fn flume_mpmc_nonblock() {
     }
 }
 
+#[allow(unused)]
 fn crossbeam_spsc_block() {
     let (tx, rx) = crossbeam_channel::bounded(1023);
     let thread = thread::spawn(move || {
@@ -567,6 +586,7 @@ fn crossbeam_spsc_block() {
     thread.join().unwrap();
 }
 
+#[allow(unused)]
 fn crossbeam_spsc_nonblock() {
     let (tx, rx) = crossbeam_channel::bounded(1023);
     let thread = thread::spawn(move || {
@@ -593,6 +613,7 @@ fn crossbeam_spsc_nonblock() {
     thread.join().unwrap();
 }
 
+#[allow(unused)]
 fn crossbeam_spsc_unbounded() {
     let (tx, rx) = crossbeam_channel::unbounded();
     let thread = thread::spawn(move || {
@@ -606,6 +627,7 @@ fn crossbeam_spsc_unbounded() {
     thread.join().unwrap();
 }
 
+#[allow(unused)]
 fn crossbeam_mpsc_block() {
     let (tx, rx) = crossbeam_channel::bounded(1023);
     let nthreads = (2 * num_cpus::get()) - 2;
@@ -628,6 +650,7 @@ fn crossbeam_mpsc_block() {
     }
 }
 
+#[allow(unused)]
 fn crossbeam_mpsc_nonblock() {
     let (tx, rx) = crossbeam_channel::bounded(1023);
     let nthreads = (2 * num_cpus::get()) - 2;
@@ -669,6 +692,7 @@ fn crossbeam_mpsc_nonblock() {
     }
 }
 
+#[allow(unused)]
 fn crossbeam_mpmc_block() {
     let (tx, rx) = crossbeam_channel::bounded(1023);
     let nthreads = num_cpus::get() - 1;
@@ -703,6 +727,7 @@ fn crossbeam_mpmc_block() {
     }
 }
 
+#[allow(unused)]
 fn crossbeam_mpmc_nonblock() {
     let (tx, rx) = crossbeam_channel::bounded(1023);
     let nthreads = num_cpus::get() - 1;
@@ -756,6 +781,7 @@ fn crossbeam_mpmc_nonblock() {
     }
 }
 
+#[allow(unused)]
 fn crossbeam_mpmc_unbounded() {
     let (tx, rx) = crossbeam_channel::unbounded();
     let nthreads = num_cpus::get() - 1;
@@ -790,6 +816,7 @@ fn crossbeam_mpmc_unbounded() {
     }
 }
 
+#[allow(unused)]
 fn rtrb_spsc_nonblock() {
     let (mut tx, mut rx) = rtrb::RingBuffer::new(1024);
     let thread = thread::spawn(move || {
@@ -816,6 +843,7 @@ fn rtrb_spsc_nonblock() {
     thread.join().unwrap();
 }
 
+#[allow(unused)]
 fn ringbuf_spsc_nonblock() {
     let rb = HeapRb::<i32>::new(1024);
     let (mut tx, mut rx) = rb.split();
@@ -843,6 +871,7 @@ fn ringbuf_spsc_nonblock() {
     thread.join().unwrap();
 }
 
+#[allow(unused)]
 fn bench_spsc_block(c: &mut Criterion) {
     let mut group = c.benchmark_group("SPSC-Block");
     for i in 0u64..3u64 {
@@ -858,6 +887,7 @@ fn bench_spsc_block(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(unused)]
 fn bench_spsc_nonblock(c: &mut Criterion) {
     let mut group = c.benchmark_group("SPSC-Nonblock");
     for i in 0u64..3u64 {
@@ -869,7 +899,7 @@ fn bench_spsc_nonblock(c: &mut Criterion) {
                              |b| b.iter(crossbeam_spsc_block));
         group.bench_function(BenchmarkId::new("Rtrb", i),
                              |b| b.iter(rtrb_spsc_nonblock));
-        group.bench_function(BenchmarkId::new("Ringbuf", &i),
+        group.bench_function(BenchmarkId::new("Ringbuf", i),
                              |b| b.iter(ringbuf_spsc_nonblock));
         group.bench_function(BenchmarkId::new("Omango", i),
                              |b| b.iter(omango_spsc_nonblock));
@@ -877,6 +907,7 @@ fn bench_spsc_nonblock(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(unused)]
 fn bench_spsc_unbounded(c: &mut Criterion) {
     let mut group = c.benchmark_group("SPSC-Unbounded");
     for i in 0u64..3u64 {
@@ -888,6 +919,7 @@ fn bench_spsc_unbounded(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(unused)]
 fn bench_mpsc_block(c: &mut Criterion) {
     let mut group = c.benchmark_group("MPSC-Block");
     for i in 0u64..3u64 {
@@ -903,6 +935,7 @@ fn bench_mpsc_block(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(unused)]
 fn bench_mpsc_nonblock(c: &mut Criterion) {
     let mut group = c.benchmark_group("MPSC-Nonblock");
     for i in 0u64..3u64 {
@@ -918,6 +951,7 @@ fn bench_mpsc_nonblock(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(unused)]
 fn bench_mpmc_block(c: &mut Criterion) {
     let mut group = c.benchmark_group("MPMC-Block");
     for i in 0..3u64 {
@@ -931,6 +965,7 @@ fn bench_mpmc_block(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(unused)]
 fn bench_mpmc_nonblock(c: &mut Criterion) {
     let mut group = c.benchmark_group("MPMC-Nonblock");
     for i in 0..3u64 {
@@ -944,6 +979,7 @@ fn bench_mpmc_nonblock(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(unused)]
 fn bench_mpmc_unbounded(c: &mut Criterion) {
     let mut group = c.benchmark_group("MPMC-Unbounded");
     for i in 0..3u64 {
@@ -955,5 +991,5 @@ fn bench_mpmc_unbounded(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_mpmc_unbounded);
+criterion_group!(benches, bench_mpmc_block);
 criterion_main!(benches);

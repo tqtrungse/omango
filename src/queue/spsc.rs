@@ -63,7 +63,7 @@ use crate::queue::{
 /// thread::sleep(Duration::from_secs(1));
 /// assert_eq!(rx.recv(), Ok(1));
 /// ```
-#[inline]
+#[inline(always)]
 pub fn bounded<T: Send>(size: u32) -> (BSender<T>, BReceiver<T>) {
     let queue = Arc::new(UnsafeCell::new(SpscBounded::new(size)));
     (BSender::new(queue.clone()), BReceiver::new(queue))
@@ -87,7 +87,7 @@ pub fn bounded<T: Send>(size: u32) -> (BSender<T>, BReceiver<T>) {
 /// assert_eq!(msg1, 1);
 /// ```
 pub struct BSender<T> {
-    inner: Arc<UnsafeCell<SpscBounded<T>>>,
+    core: Arc<UnsafeCell<SpscBounded<T>>>,
 }
 
 unsafe impl<T: Send> Send for BSender<T> {}
@@ -95,16 +95,16 @@ unsafe impl<T: Send> Send for BSender<T> {}
 unsafe impl<T: Send> Sync for BSender<T> {}
 
 impl<T: Send> Clone for BSender<T> {
-    #[inline]
+    #[inline(always)]
     fn clone(&self) -> Self {
-        Self { inner: self.inner.clone() }
+        Self { core: self.core.clone() }
     }
 }
 
 impl<T: Send> BSender<T> {
-    #[inline]
+    #[inline(always)]
     fn new(inner: Arc<UnsafeCell<SpscBounded<T>>>) -> Self <> {
-        Self { inner }
+        Self { core: inner }
     }
 
     /// Attempts to send a message into the queue without blocking.
@@ -126,9 +126,9 @@ impl<T: Send> BSender<T> {
     /// rx.close();
     /// assert_eq!(tx.try_send(3), Err(TrySendError::Disconnected(3)));
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn try_send(&self, value: T) -> Result<(), TrySendError<T>> {
-        unsafe { (*self.inner.get()).try_send(value) }
+        unsafe { (*self.core.get()).try_send(value) }
     }
 
     /// Blocks the current thread until a message is sent or the queue is disconnected.
@@ -160,9 +160,9 @@ impl<T: Send> BSender<T> {
     /// assert_eq!(tx.send(2), Ok(()));
     /// assert_eq!(tx.send(3), Err(SendError(3)));
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn send(&self, value: T) -> Result<(), SendError<T>> {
-        unsafe { (*self.inner.get()).send(value, (*self.inner.get()).cast()) }
+        unsafe { (*self.core.get()).send(value, (*self.core.get()).cast()) }
     }
 
     /// Get current length of queue.
@@ -187,14 +187,9 @@ impl<T: Send> BSender<T> {
     /// thread::sleep(Duration::from_millis(500));
     /// assert_eq!(tx2.length(), 1);
     /// ```
-    ///
-    /// [`send`]: spsc::BSender::send
-    /// [`try_send`]: spsc::BSender::try_send
-    /// [`recv`]: spsc::BReceiver::recv
-    /// [`try_recv`]: spsc::BReceiver::try_recv
-    #[inline]
+    #[inline(always)]
     pub fn length(&self) -> u32 {
-        unsafe { (*self.inner.get()).length() }
+        unsafe { (*self.core.get()).length() }
     }
 
     /// Fires closing queue notification.
@@ -227,9 +222,9 @@ impl<T: Send> BSender<T> {
     /// [`try_send`]: spsc::BSender::try_send
     /// [`recv`]: spsc::BReceiver::recv
     /// [`try_recv`]: spsc::BReceiver::try_recv
-    #[inline]
+    #[inline(always)]
     pub fn close(&self) {
-        unsafe { (*self.inner.get()).close() }
+        unsafe { (*self.core.get()).close() }
     }
 
     /// Check the queue was closed.
@@ -252,9 +247,9 @@ impl<T: Send> BSender<T> {
     /// thread::sleep(Duration::from_millis(500));
     /// assert_eq!(rx.is_close(), true);
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn is_close(&self) -> bool {
-        unsafe { (*self.inner.get()).is_close() }
+        unsafe { (*self.core.get()).is_close() }
     }
 }
 
@@ -280,7 +275,7 @@ impl<T: Send> BSender<T> {
 /// assert_eq!(rx.recv(), Ok(2)); // Received after 1 second.
 /// ```
 pub struct BReceiver<T> {
-    inner: Arc<UnsafeCell<SpscBounded<T>>>,
+    core: Arc<UnsafeCell<SpscBounded<T>>>,
 }
 
 unsafe impl<T: Send> Send for BReceiver<T> {}
@@ -288,16 +283,16 @@ unsafe impl<T: Send> Send for BReceiver<T> {}
 unsafe impl<T: Send> Sync for BReceiver<T> {}
 
 impl<T: Send> Clone for BReceiver<T> {
-    #[inline]
+    #[inline(always)]
     fn clone(&self) -> Self {
-        Self { inner: self.inner.clone() }
+        Self { core: self.core.clone() }
     }
 }
 
 impl<T: Send> BReceiver<T> {
-    #[inline]
+    #[inline(always)]
     fn new(inner: Arc<UnsafeCell<SpscBounded<T>>>) -> Self <> {
-        Self { inner }
+        Self { core: inner }
     }
 
     /// Attempts to receive a message from the queue without blocking.
@@ -320,9 +315,9 @@ impl<T: Send> BReceiver<T> {
     /// assert_eq!(rx.try_recv(), Ok(5));
     /// assert_eq!(rx.try_recv(), Err(TryRecvError));
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn try_recv(&self) -> Result<T, TryRecvError> {
-        unsafe { (*self.inner.get()).try_recv() }
+        unsafe { (*self.core.get()).try_recv() }
     }
 
     /// Blocks the current thread until a message is received.
@@ -354,9 +349,9 @@ impl<T: Send> BReceiver<T> {
     /// assert_eq!(rx.recv(), Ok(5));
     /// assert_eq!(rx.recv(), Err(RecvError));
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn recv(&self) -> Result<T, RecvError> {
-        unsafe { (*self.inner.get()).recv((*self.inner.get()).cast()) }
+        unsafe { (*self.core.get()).recv((*self.core.get()).cast()) }
     }
 
     /// Get current length of queue.
@@ -381,14 +376,9 @@ impl<T: Send> BReceiver<T> {
     ///
     /// assert_eq!(tx2.length(), 1);
     /// ```
-    ///
-    /// [`send`]: spsc::BSender::send
-    /// [`try_send`]: spsc::BSender::try_send
-    /// [`recv`]: spsc::BReceiver::recv
-    /// [`try_recv`]: spsc::BReceiver::try_recv
-    #[inline]
+    #[inline(always)]
     pub fn length(&self) -> u32 {
-        unsafe { (*self.inner.get()).length() }
+        unsafe { (*self.core.get()).length() }
     }
 
     /// Fires closing queue notification.
@@ -421,9 +411,9 @@ impl<T: Send> BReceiver<T> {
     /// [`try_send`]: spsc::BSender::try_send
     /// [`recv`]: spsc::BReceiver::recv
     /// [`try_recv`]: spsc::BReceiver::try_recv
-    #[inline]
+    #[inline(always)]
     pub fn close(&self) {
-        unsafe { (*self.inner.get()).close() }
+        unsafe { (*self.core.get()).close() }
     }
 
     /// Check the queue was closed.
@@ -446,9 +436,9 @@ impl<T: Send> BReceiver<T> {
     /// thread::sleep(Duration::from_millis(500));
     /// assert_eq!(rx.is_close(), true);
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn is_close(&self) -> bool {
-        unsafe { (*self.inner.get()).is_close() }
+        unsafe { (*self.core.get()).is_close() }
     }
 }
 
@@ -480,7 +470,7 @@ impl<T: Send> BReceiver<T> {
 /// assert_eq!(rx.recv(), Ok(1));
 /// assert_eq!(rx.recv(), Ok(2));
 /// ```
-#[inline]
+#[inline(always)]
 pub fn unbounded<T: Send>() -> (USender<T>, UReceiver<T>) {
     let queue = Arc::new(UnsafeCell::new(SpscUnbounded::default()));
     (USender::new(queue.clone()), UReceiver::new(queue))
@@ -504,7 +494,7 @@ pub fn unbounded<T: Send>() -> (USender<T>, UReceiver<T>) {
 /// assert_eq!(msg1, 1);
 /// ```
 pub struct USender<T> {
-    inner: Arc<UnsafeCell<SpscUnbounded<T>>>,
+    core: Arc<UnsafeCell<SpscUnbounded<T>>>,
 }
 
 unsafe impl<T: Send> Send for USender<T> {}
@@ -512,16 +502,16 @@ unsafe impl<T: Send> Send for USender<T> {}
 unsafe impl<T: Send> Sync for USender<T> {}
 
 impl<T: Send> Clone for USender<T> {
-    #[inline]
+    #[inline(always)]
     fn clone(&self) -> Self {
-        Self { inner: self.inner.clone() }
+        Self { core: self.core.clone() }
     }
 }
 
 impl<T: Send> USender<T> {
-    #[inline]
+    #[inline(always)]
     fn new(inner: Arc<UnsafeCell<SpscUnbounded<T>>>) -> Self <> {
-        Self { inner }
+        Self { core: inner }
     }
 
     /// Attempts to send a message into the queue without blocking.
@@ -546,9 +536,9 @@ impl<T: Send> USender<T> {
     ///
     /// tx.send(2).unwrap();
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn send(&self, value: T) -> Result<(), SendError<T>> {
-        unsafe { (*self.inner.get()).send(value) }
+        unsafe { (*self.core.get()).send(value) }
     }
 
     /// Fires closing queue notification.
@@ -579,9 +569,9 @@ impl<T: Send> USender<T> {
     ///
     /// [`send`]: spsc::USender::send
     /// [`recv`]: spsc::UReceiver::recv
-    #[inline]
+    #[inline(always)]
     pub  fn close(&self) {
-        unsafe { (*self.inner.get()).close() }
+        unsafe { (*self.core.get()).close() }
     }
 }
 
@@ -607,7 +597,7 @@ impl<T: Send> USender<T> {
 /// assert_eq!(rx.recv(), Ok(2)); // Received after 1 second.
 /// ```
 pub struct UReceiver<T> {
-    inner: Arc<UnsafeCell<SpscUnbounded<T>>>,
+    core: Arc<UnsafeCell<SpscUnbounded<T>>>,
 }
 
 unsafe impl<T: Send> Send for UReceiver<T> {}
@@ -615,16 +605,16 @@ unsafe impl<T: Send> Send for UReceiver<T> {}
 unsafe impl<T: Send> Sync for UReceiver<T> {}
 
 impl<T: Send> Clone for UReceiver<T> {
-    #[inline]
+    #[inline(always)]
     fn clone(&self) -> Self {
-        Self { inner: self.inner.clone() }
+        Self { core: self.core.clone() }
     }
 }
 
 impl<T: Send> UReceiver<T> {
-    #[inline]
+    #[inline(always)]
     fn new(inner: Arc<UnsafeCell<SpscUnbounded<T>>>) -> Self <> {
-        Self { inner }
+        Self { core: inner }
     }
 
     /// Blocks the current thread until a message is received.
@@ -653,9 +643,9 @@ impl<T: Send> UReceiver<T> {
     /// assert_eq!(rx.recv(), Ok(5));
     /// assert_eq!(rx.recv(), Err(RecvError));
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn recv(&self) -> Result<T, RecvError> {
-        unsafe { (*self.inner.get()).recv() }
+        unsafe { (*self.core.get()).recv() }
     }
 
     /// Fires closing queue notification.
@@ -686,38 +676,38 @@ impl<T: Send> UReceiver<T> {
     ///
     /// [`send`]: spsc::USender::send
     /// [`recv`]: spsc::UReceiver::recv
-    #[inline]
+    #[inline(always)]
     pub  fn close(&self) {
-        unsafe { (*self.inner.get()).close() }
+        unsafe { (*self.core.get()).close() }
     }
 }
 
 mod test {
-    use crate::queue::spsc::{bounded, BReceiver, BSender, unbounded, UReceiver, USender};
-
-    fn is_send<T: Send>() {}
-
     #[test]
     fn bounds() {
-        is_send::<BSender<i32>>();
-        is_send::<BReceiver<i32>>();
+        fn is_send<T: Send>() {}
+        
+        is_send::<crate::queue::spsc::BSender<i32>>();
+        is_send::<crate::queue::spsc::BReceiver<i32>>();
     }
 
     #[test]
     fn unbound() {
-        is_send::<USender<i32>>();
-        is_send::<UReceiver<i32>>();
+        fn is_send<T: Send>() {}
+        
+        is_send::<crate::queue::spsc::USender<i32>>();
+        is_send::<crate::queue::spsc::UReceiver<i32>>();
     }
 
     #[test]
     fn send_recv() {
         // Bounded.
-        let (tx_b, rx_b) = bounded(3);
+        let (tx_b, rx_b) = crate::queue::spsc::bounded(3);
         tx_b.try_send(1).unwrap();
         assert_eq!(rx_b.try_recv().unwrap(), 1);
 
         // Unbounded
-        let (tx_u, rx_u) = unbounded();
+        let (tx_u, rx_u) = crate::queue::spsc::unbounded();
         tx_u.send(1).unwrap();
         assert_eq!(rx_u.recv().unwrap(), 1);
     }
@@ -725,7 +715,7 @@ mod test {
     #[test]
     fn send_shared_recv() {
         // Bounded.
-        let (tx_b1, rx_b) = bounded(4);
+        let (tx_b1, rx_b) = crate::queue::spsc::bounded(4);
         let tx_b2 = tx_b1.clone();
 
         tx_b1.send(1).unwrap();
@@ -735,7 +725,7 @@ mod test {
         assert_eq!(rx_b.recv().unwrap(), 2);
 
         // Unbounded.
-        let (tx_u1, rx_u) = unbounded();
+        let (tx_u1, rx_u) = crate::queue::spsc::unbounded();
         let tx_u2 = tx_u1.clone();
 
         tx_u1.send(1).unwrap();
@@ -748,7 +738,7 @@ mod test {
     #[test]
     fn send_recv_threads() {
         // Bounded.
-        let (tx_b, rx_b) = bounded(4);
+        let (tx_b, rx_b) = crate::queue::spsc::bounded(4);
         let thread = std::thread::spawn(move || {
             tx_b.send(1).unwrap();
         });
@@ -756,7 +746,7 @@ mod test {
         thread.join().unwrap();
 
         // Unbounded.
-        let (tx_u, rx_u) = unbounded();
+        let (tx_u, rx_u) = crate::queue::spsc::unbounded();
         let thread = std::thread::spawn(move || {
             tx_u.send(1).unwrap();
         });
@@ -766,7 +756,7 @@ mod test {
 
     #[test]
     fn send_recv_threads_no_capacity() {
-        let (tx, rx) = bounded(0);
+        let (tx, rx) = crate::queue::spsc::bounded(0);
         let thread = std::thread::spawn(move || {
             tx.send(1).unwrap();
             tx.send(2).unwrap();
@@ -784,7 +774,7 @@ mod test {
     #[test]
     fn send_close_gets_none() {
         // Bounded.
-        let (tx_b, rx_b) = bounded::<i32>(1);
+        let (tx_b, rx_b) = crate::queue::spsc::bounded::<i32>(1);
         let thread = std::thread::spawn(move || {
             assert!(rx_b.recv().is_err());
         });
@@ -792,7 +782,7 @@ mod test {
         thread.join().unwrap();
 
         // Unbounded.
-        let (tx_u, rx_u) = unbounded::<i32>();
+        let (tx_u, rx_u) = crate::queue::spsc::unbounded::<i32>();
         let thread = std::thread::spawn(move || {
             assert!(rx_u.recv().is_err());
         });
@@ -804,7 +794,7 @@ mod test {
     #[test]
     fn spsc_no_capacity() {
         let amt = 30000;
-        let (tx, rx) = bounded(0);
+        let (tx, rx) = crate::queue::spsc::bounded(0);
 
         let txc = tx.clone();
         std::thread::spawn(move || {

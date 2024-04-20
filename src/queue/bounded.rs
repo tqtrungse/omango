@@ -33,13 +33,11 @@ use omango_util::{
     hint::{likely, unlikely},
 };
 
-use crate::{
-    queue::{
-        state::State,
-        elem::ElemArr,
-        waker::{Checker, Waiter, Waker},
-        error::{SendError, RecvError, TrySendError, TryRecvError},
-    },
+use crate::queue::{
+    state::State,
+    elem::ElemArr,
+    waker::{Checker, Waiter, Waker},
+    error::{SendError, RecvError, TrySendError, TryRecvError},
 };
 
 const RETRIES: u8 = 2;
@@ -54,7 +52,7 @@ pub(crate) trait Bounded<T> {
     fn try_send(&mut self, msg: T) -> Result<(), TrySendError<T>> {
         let (elem, lap, state) = self.select_bucket_4_send();
 
-        return if likely(state == State::Success) {
+        if likely(state == State::Success) {
             elem.write(lap.wrapping_add(1), msg);
             self.wake_reader();
             Ok(())
@@ -62,7 +60,7 @@ pub(crate) trait Bounded<T> {
             Err(TrySendError::Disconnected(msg))
         } else {
             Err(TrySendError::Full(msg))
-        };
+        }
     }
 
     /// Receives non-blocking a message.
@@ -213,7 +211,7 @@ impl<T> SpscBounded<T> {
 
         Self {
             read_meta: CachePadded::new(1 << 32),
-            meta: CachePadded::new(Meta{
+            meta: CachePadded::new(Meta {
                 write_meta: 0,
                 closed: AtomicBool::new(false),
             }),
@@ -226,16 +224,16 @@ impl<T> SpscBounded<T> {
 }
 
 impl<T> Bounded<T> for SpscBounded<T> {
-    #[inline]
+    #[inline(always)]
     fn close(&self) {
         self.meta.closed.store(true, Ordering::Relaxed);
         self.write_waker.close();
         self.read_waker.close();
     }
 
-    #[inline]
+    #[inline(always)]
     fn length(&self) -> u32 {
-        let head = self.read_meta.clone() as u32;
+        let head = *self.read_meta as u32;
         let tail = self.meta.write_meta as u32;
         if tail > head {
             return tail - head + 1;
@@ -257,34 +255,37 @@ impl<T> Bounded<T> for SpscBounded<T> {
             }
 
             let elem_lap = elem.load_lap();
-            if lap == elem_lap {
-                // The element is ready for writing on this lap.
-                // Try to claim the right to write to this element.
-                if likely(idx + 1 < self.capacity) {
-                    self.meta.write_meta += 1;
-                } else {
-                    self.meta.write_meta = (lap.wrapping_add(2) as u64) << 32;
-                };
-
-                return (elem, elem_lap, State::Success);
-            } else if lap > elem_lap {
-                // The element is not yet read on the previous lap.
-                if lap > elem.load_lap() {
-                    return (elem, elem_lap, State::Failed);
-                }
-                // The element has already been read on this lap,
-                // this means that `read operation` has been changed as well,
-                // retry.
-                backoff.spin();
-            } else {
-                // Snooze because we need to wait for the stamp to get updated.
-                backoff.snooze();
+            match lap.cmp(&elem_lap) {
+                std::cmp::Ordering::Equal => {
+                    // The element is ready for writing on this lap.
+                    // Try to claim the right to write to this element.
+                    if likely(idx + 1 < self.capacity) {
+                        self.meta.write_meta += 1;
+                    } else {
+                        self.meta.write_meta = (lap.wrapping_add(2) as u64) << 32;
+                    };
+                    return (elem, elem_lap, State::Success);
+                },
+                std::cmp::Ordering::Greater => {
+                    // The element is not yet read on the previous lap.
+                    if lap > elem.load_lap() {
+                        return (elem, elem_lap, State::Failed);
+                    }
+                    // The element has already been read on this lap,
+                    // this means that `read operation` has been changed as well,
+                    // retry.
+                    backoff.spin();
+                },
+                std::cmp::Ordering::Less => {
+                    // Snooze because we need to wait for the stamp to get updated.
+                    backoff.snooze();
+                },
             }
         }
     }
 
     fn select_bucket_4_recv(&mut self) -> (&ElemArr<T>, u32, bool) {
-        let meta = self.read_meta.clone();
+        let meta = *self.read_meta;
         let idx = meta as u32;
         let lap = (meta >> 32) as u32;
         let elem = unsafe { self.buffer.get_unchecked(idx as usize) };
@@ -292,63 +293,67 @@ impl<T> Bounded<T> for SpscBounded<T> {
 
         loop {
             let elem_lap = elem.load_lap();
-            if lap == elem_lap {
-                // The element is ready for reading on this lap.
-                // Try to claim the right to read to this element.
-                if likely(idx + 1 < self.capacity) {
-                    self.read_meta.add_assign(1);
-                } else {
-                    self.read_meta.bitand_assign(0);
-                    self.read_meta.bitor_assign((lap.wrapping_add(2) as u64) << 32);
-                };
-                return (elem, elem_lap, true);
-            } else if lap > elem_lap {
-                // The element is not yet write on the previous lap.
-                if lap > elem.load_lap() {
-                    return (elem, elem_lap, false);
-                }
-                // The element has already been written on this lap,
-                // this means that `send operation` has been changed as well,
-                // retry.
-                backoff.spin();
-            } else {
-                // Snooze because we need to wait for the stamp to get updated.
-                backoff.snooze();
+            match lap.cmp(&elem_lap) {
+                std::cmp::Ordering::Equal => {
+                    // The element is ready for reading on this lap.
+                    // Try to claim the right to read to this element.
+                    if likely(idx + 1 < self.capacity) {
+                        self.read_meta.add_assign(1);
+                    } else {
+                        self.read_meta.bitand_assign(0);
+                        self.read_meta.bitor_assign((lap.wrapping_add(2) as u64) << 32);
+                    };
+                    return (elem, elem_lap, true);
+                },
+                std::cmp::Ordering::Greater => {
+                    // The element is not yet write on the previous lap.
+                    if lap > elem.load_lap() {
+                        return (elem, elem_lap, false);
+                    }
+                    // The element has already been written on this lap,
+                    // this means that `send operation` has been changed as well,
+                    // retry.
+                    backoff.spin();
+                },
+                std::cmp::Ordering::Less => {
+                    // Snooze because we need to wait for the stamp to get updated.
+                    backoff.snooze();
+                },
             }
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn register_writer_waiter(&self, waiter: &Waiter) -> bool {
         self.write_waker.register(waiter)
     }
 
-    #[inline]
+    #[inline(always)]
     fn register_reader_waiter(&self, waiter: &Waiter) -> bool {
         self.read_waker.register(waiter)
     }
 
-    #[inline]
+    #[inline(always)]
     fn unregister_writer_waiter(&self, waiter: &Waiter) {
         self.write_waker.unregister(waiter);
     }
 
-    #[inline]
+    #[inline(always)]
     fn unregister_reader_waiter(&self, waiter: &Waiter) {
         self.read_waker.unregister(waiter);
     }
 
-    #[inline]
+    #[inline(always)]
     fn wake_reader(&self) {
         self.read_waker.wake();
     }
 
-    #[inline]
+    #[inline(always)]
     fn wake_writer(&self) {
         self.write_waker.wake();
     }
 
-    #[inline]
+    #[inline(always)]
     fn cast(&self) -> &dyn Checker {
         self
     }
@@ -356,7 +361,7 @@ impl<T> Bounded<T> for SpscBounded<T> {
 
 impl<T> Checker for SpscBounded<T> {
     /// Check queue was closed.
-    #[inline]
+    #[inline(always)]
     fn is_close(&self) -> bool {
         self.meta.closed.load(Ordering::Relaxed)
     }
@@ -400,7 +405,7 @@ impl<T> MpmcBounded<T> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub(crate) fn get_cap(&self) -> u32 {
         self.capacity
     }
@@ -412,7 +417,7 @@ impl<T> Bounded<T> for MpmcBounded<T> {
         if (meta & MPMC_MASK_64) != 0 {
             return;
         }
-        
+
         let mut new_meta: u64;
         let backoff = Backoff::default();
 
@@ -422,7 +427,7 @@ impl<T> Bounded<T> for MpmcBounded<T> {
                 meta,
                 new_meta,
                 Ordering::Acquire,
-                Ordering::Relaxed
+                Ordering::Relaxed,
             ) {
                 Ok(_) => break,
                 Err(v) => {
@@ -436,7 +441,7 @@ impl<T> Bounded<T> for MpmcBounded<T> {
         self.read_waker.close()
     }
 
-    #[inline]
+    #[inline(always)]
     fn length(&self) -> u32 {
         let head = self.read_meta.load(Ordering::Relaxed) as u32;
         let tail = self.write_meta.load(Ordering::Relaxed) as u32;
@@ -460,45 +465,49 @@ impl<T> Bounded<T> for MpmcBounded<T> {
             }
 
             let elem_lap = elem.load_lap();
-            if lap == elem_lap {
-                // The element is ready for writing on this lap.
-                // Try to claim the right to write to this element.
-                let new_tail = if likely(idx + 1 < self.capacity) {
-                    meta + 1
-                } else {
-                    (lap.wrapping_add(2) as u64) << 32
-                };
+            match lap.cmp(&elem_lap) {
+                std::cmp::Ordering::Equal => {
+                    // The element is ready for writing on this lap.
+                    // Try to claim the right to write to this element.
+                    let new_tail = if likely(idx + 1 < self.capacity) {
+                        meta + 1
+                    } else {
+                        (lap.wrapping_add(2) as u64) << 32
+                    };
 
-                match self.write_meta.compare_exchange_weak(
-                    meta,
-                    new_tail,
-                    Ordering::Acquire,
-                    Ordering::Relaxed
-                ) {
-                    Ok(_) => return (elem, elem_lap, State::Success),
-                    Err(v) => {
-                        meta = v;
-                        backoff.spin();
+                    match self.write_meta.compare_exchange_weak(
+                        meta,
+                        new_tail,
+                        Ordering::Acquire,
+                        Ordering::Relaxed,
+                    ) {
+                        Ok(_) => return (elem, elem_lap, State::Success),
+                        Err(v) => {
+                            meta = v;
+                            backoff.spin();
+                        }
                     }
-                }
-            } else if lap > elem_lap {
-                // The element is not yet read on the previous lap.
-                if lap > elem.load_lap() {
-                    return (elem, elem_lap, State::Failed);
-                }
-                // The element has already been read on this lap,
-                // this means that `read operation` has been changed as well,
-                // retry.
-                backoff.spin();
-                meta = self.write_meta.load(Ordering::Relaxed);
-            } else {
-                // Snooze because we need to wait for the stamp to get updated.
-                backoff.snooze();
+                },
+                std::cmp::Ordering::Greater => {
+                    // The element is not yet read on the previous lap.
+                    if lap > elem.load_lap() {
+                        return (elem, elem_lap, State::Failed);
+                    }
+                    // The element has already been read on this lap,
+                    // this means that `read operation` has been changed as well,
+                    // retry.
+                    backoff.spin();
+                    meta = self.write_meta.load(Ordering::Relaxed);
+                },
+                std::cmp::Ordering::Less => {
+                    // Snooze because we need to wait for the stamp to get updated.
+                    backoff.snooze();
 
-                // The element has already been read on this lap,
-                // this means that `read operation` has been changed as well,
-                // retry.
-                meta = self.write_meta.load(Ordering::Relaxed);
+                    // The element has already been read on this lap,
+                    // this means that `read operation` has been changed as well,
+                    // retry.
+                    meta = self.write_meta.load(Ordering::Relaxed);
+                },
             }
         }
     }
@@ -512,81 +521,85 @@ impl<T> Bounded<T> for MpmcBounded<T> {
             let lap = (meta >> 32) as u32;
             let elem = unsafe { self.buffer.get_unchecked(idx as usize) };
             let elem_lap = elem.load_lap();
+            
+            match lap.cmp(&elem_lap) {
+                std::cmp::Ordering::Equal => {
+                    // The element is ready for reading on this lap.
+                    // Try to claim the right to read to this element.
+                    let new_data = if likely(idx + 1 < self.capacity) {
+                        meta + 1
+                    } else {
+                        (lap.wrapping_add(2) as u64) << 32
+                    };
 
-            if lap == elem_lap {
-                // The element is ready for reading on this lap.
-                // Try to claim the right to read to this element.
-                let new_data = if likely(idx + 1 < self.capacity) {
-                    meta + 1
-                } else {
-                    (lap.wrapping_add(2) as u64) << 32
-                };
-
-                match self.read_meta.compare_exchange_weak(
-                    meta,
-                    new_data,
-                    Ordering::Acquire,
-                    Ordering::Relaxed
-                ) {
-                    Ok(_) => return (elem, elem_lap, true),
-                    Err(v) => {
-                        meta = v;
-                        backoff.spin();
+                    match self.read_meta.compare_exchange_weak(
+                        meta,
+                        new_data,
+                        Ordering::Acquire,
+                        Ordering::Relaxed,
+                    ) {
+                        Ok(_) => return (elem, elem_lap, true),
+                        Err(v) => {
+                            meta = v;
+                            backoff.spin();
+                        }
                     }
-                }
-            } else if lap > elem_lap {
-                // The element is not yet write on the previous lap.
-                if lap > elem.load_lap() {
-                    return (elem, elem_lap, false);
-                }
-                // The element has already been written on this lap,
-                // this means that `send operation` has been changed as well,
-                // retry.
-                backoff.spin();
-                meta = self.read_meta.load(Ordering::Relaxed);
-            } else {
-                // Snooze because we need to wait for the stamp to get updated.
-                backoff.snooze();
+                },
+                std::cmp::Ordering::Greater => {
+                    // The element is not yet write on the previous lap.
+                    if lap > elem.load_lap() {
+                        return (elem, elem_lap, false);
+                    }
+                    // The element has already been written on this lap,
+                    // this means that `send operation` has been changed as well,
+                    // retry.
+                    backoff.spin();
+                    meta = self.read_meta.load(Ordering::Relaxed);
+                },
+                std::cmp::Ordering::Less => {
+                    // Snooze because we need to wait for the stamp to get updated.
+                    backoff.snooze();
 
-                // The element has already been written on this lap,
-                // this means that `send operation` has been changed as well,
-                // retry.
-                meta = self.read_meta.load(Ordering::Relaxed);
+                    // The element has already been written on this lap,
+                    // this means that `send operation` has been changed as well,
+                    // retry.
+                    meta = self.read_meta.load(Ordering::Relaxed);
+                },
             }
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn register_writer_waiter(&self, waiter: &Waiter) -> bool {
         self.write_waker.register(waiter)
     }
 
-    #[inline]
+    #[inline(always)]
     fn register_reader_waiter(&self, waiter: &Waiter) -> bool {
         self.read_waker.register(waiter)
     }
 
-    #[inline]
+    #[inline(always)]
     fn unregister_writer_waiter(&self, waiter: &Waiter) {
         self.write_waker.unregister(waiter);
     }
 
-    #[inline]
+    #[inline(always)]
     fn unregister_reader_waiter(&self, waiter: &Waiter) {
         self.read_waker.unregister(waiter);
     }
 
-    #[inline]
+    #[inline(always)]
     fn wake_reader(&self) {
         self.read_waker.wake();
     }
 
-    #[inline]
+    #[inline(always)]
     fn wake_writer(&self) {
         self.write_waker.wake();
     }
 
-    #[inline]
+    #[inline(always)]
     fn cast(&self) -> &dyn Checker {
         self
     }
@@ -594,7 +607,7 @@ impl<T> Bounded<T> for MpmcBounded<T> {
 
 impl<T> Checker for MpmcBounded<T> {
     /// Check queue was closed.
-    #[inline]
+    #[inline(always)]
     fn is_close(&self) -> bool {
         (self.write_meta.load(Ordering::Relaxed) & MPMC_MASK_64) != 0
     }

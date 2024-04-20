@@ -47,7 +47,7 @@ pub(crate) struct Waiter {
 }
 
 impl Waiter {
-    #[inline]
+    #[inline(always)]
     pub(crate) fn new(e_lap: *const AtomicU32, lap: u32) -> Self {
         Self {
             atom: e_lap,
@@ -105,7 +105,7 @@ struct Metadata {
 }
 
 impl Metadata {
-    #[inline]
+    #[inline(always)]
     fn new() -> Self {
         Self {
             waiters: VecDeque::new(),
@@ -115,7 +115,7 @@ impl Metadata {
     }
 
     /// Registers a waiter.
-    #[inline]
+    #[inline(always)]
     fn register(&mut self, waiter: &Waiter) {
         self.waiters.push_back(waiter as *const Waiter);
     }
@@ -170,7 +170,7 @@ impl Metadata {
     }
     
     /// Check waiters is empty.
-    #[inline]
+    #[inline(always)]
     fn is_empty(&self) -> bool {
         self.waiters.is_empty()
     }
@@ -182,7 +182,7 @@ pub(crate) struct Waker {
 }
 
 impl Default for Waker {
-    #[inline]
+    #[inline(always)]
     fn default() -> Self {
         Self {
             guard: Mutex::new(Metadata::new()),
@@ -218,7 +218,7 @@ impl Waker {
     /// Unregisters a waiter.
     ///
     /// It should be used by the blocking thread to avoid lost wakeup.
-    #[inline]
+    #[inline(always)]
     pub(crate) fn unregister(&self, waiter: &Waiter) {
         let mut inner = self.guard.lock();
         inner.unregister(waiter);
@@ -228,7 +228,7 @@ impl Waker {
     /// Wakes up one waiter from the queue.
     ///
     /// It doesn't remove waiter.
-    #[inline]
+    #[inline(always)]
     pub(crate) fn wake(&self) {
         if unlikely(!self.empty.load(Ordering::SeqCst)) {
             self.guard.lock().notify();

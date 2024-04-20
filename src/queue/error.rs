@@ -56,18 +56,21 @@ pub struct RecvError;
 pub struct TryRecvError;
 
 impl<T> fmt::Debug for SendError<T> {
+    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         "SendError(..)".fmt(f)
     }
 }
 
 impl<T> fmt::Display for SendError<T> {
+    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         "sending on a disconnected channel".fmt(f)
     }
 }
 
 impl<T> fmt::Debug for TrySendError<T> {
+    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             TrySendError::Full(..) => "Full(..)".fmt(f),
@@ -77,6 +80,7 @@ impl<T> fmt::Debug for TrySendError<T> {
 }
 
 impl<T> fmt::Display for TrySendError<T> {
+    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             TrySendError::Full(..) => "sending on a full channel".fmt(f),
