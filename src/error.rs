@@ -18,21 +18,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-//! Defines all errors is used in this crate.
-
 use std::{error, fmt};
 
 /// An error returned from the `send` method.
 ///
 /// The message could not be sent because the channel is disconnected.
 ///
-/// The error contains the message so it can be recovered.
+/// The error contains the message, so it can be recovered.
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub struct SendError<T>(pub T);
 
 /// An error returned from the `try_send` method.
 ///
-/// The error contains the message being sent so it can be recovered.
+/// The error contains the message being sent, so it can be recovered.
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum TrySendError<T> {
     /// The message could not be sent because the channel is full.
@@ -128,3 +126,17 @@ impl fmt::Display for TryRecvError {
 }
 
 impl error::Error for TryRecvError {}
+
+/// An error returned from the [`crate::single`] folder.
+///
+/// Received error when user function returns error or panic.
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct WrapError(pub String);
+
+impl fmt::Display for WrapError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "error: {}", self.0)
+    }
+}
+
+impl error::Error for WrapError {}

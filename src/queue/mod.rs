@@ -20,7 +20,6 @@
 
 pub mod mpmc;
 pub mod spsc;
-pub mod error;
 
 mod elem;
 mod waker;
