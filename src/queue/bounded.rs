@@ -33,10 +33,12 @@ use omango_util::{
     hint::{likely, unlikely},
 };
 
-use crate::queue::{
-    state::State,
-    elem::ElemArr,
-    waker::{Checker, Waiter, Waker},
+use crate::{
+    queue::{
+        state::State,
+        elem::ElemArr,
+        waker::{Checker, Waiter, Waker},
+    },
     error::{SendError, RecvError, TrySendError, TryRecvError},
 };
 

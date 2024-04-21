@@ -18,7 +18,5 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-pub mod wg;
-pub mod queue;
-pub mod single;
-pub mod error;
+pub mod flight;
+pub mod source;

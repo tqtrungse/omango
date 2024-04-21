@@ -9,25 +9,31 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
   <a href="https://github.com/tqtrungse/omango"><img src="https://img.shields.io/github/v/release/tqtrungse/omango" alt="Release"></a>
   <a href="https://crates.io/crates/omango"><img src="https://img.shields.io/crates/v/omango.svg" alt="Cargo"></a>
-  <a href="https://www.rust-lang.org"><img src="https://img.shields.io/badge/rust-1.49+-lightgray.svg" alt="Rust 1.49+"></a>
+  <a href="https://www.rust-lang.org"><img src="https://img.shields.io/badge/rust-1.57+-lightgray.svg" alt="Rust 1.49+"></a>
 </p>
 <br/>
 
 # Omango
 
-This is a concurrency library.<br />
+This is a concurrency collection.<br />
 
-The crate provides a lock-free bounded and unbounded single-producer-single-consumer channel and
-multi-producer-multi-consumer channel.<br />
+- Support lock-free SPSC and MPMC queue (bounded and unbounded).
+  The queues are simple, lightweight, fast and safe in multithreading environment.
+  It is faster than [std::mpsc::sync_channel](https://github.com/rust-lang/rust/tree/master/library/std/src/sync/mpsc)
+  and other open source's bounded queue (
+      [ringbuf](https://github.com/agerasev/ringbuf),
+      [rtrb](https://github.com/mgeier/rtrb),
+      [flume](https://github.com/zesterer/flume),
+      [crossbeam-channel](https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-channel)
+  ).
 
-The queues are simple, lightweight, fast and safe in multithreading environment.
-It is faster than [std::mpsc::sync_channel](https://github.com/rust-lang/rust/tree/master/library/std/src/sync/mpsc) 
-and other open source's bounded queue (
-    [ringbuf](https://github.com/agerasev/ringbuf), 
-    [rtrb](https://github.com/mgeier/rtrb), 
-    [flume](https://github.com/zesterer/flume), 
-    [crossbeam-channel](https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-channel)
-). <br/>
+- Support `Golang WaitGroup` waits for a collection of threads to finish.
+
+- Support `Single Flight` multiplexing threads that have the same work and 
+  only one represent thread will run and returns response for all waiting threads. 
+
+- Support `Single Source` provide mechanism to synthesize response from multiple
+  sources.
 
 ## Table of Contents
 
@@ -65,7 +71,7 @@ Both `SPSC` and `MPMC` queue can be used as channels.<br /><br />
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-omango = "0.2.4"
+omango = "0.2.5"
 ```
 
 ## Compatibility
@@ -74,7 +80,7 @@ The minimum supported Rust version is `1.57`.
 
 ## Benchmarks
 
-Tests were performed on an Intel Core I5 with 4 cores running Windows 10 and 
+Tests were performed on an Intel Core I7 with 4 cores running Windows 11 and 
 M1 with 8 cores running macOS BigSur 11.3.
 
 # <img src="./misc/SPSC.png" alt="Omango benchmarks SPSC" width="100%"/>
@@ -93,3 +99,5 @@ license. See [LICENSE](LICENSE) for more information.
 * [Blog of Dmitry Vyukov](https://docs.google.com/document/d/1yIAYmbvL3JxOKOjuCyon7JhW4cSv1wy5hC0ApeGMV9s/pub)
 * [The cache coherence protocols](https://www.sciencedirect.com/topics/engineering/cache-coherence)
 * [CppCon 2017: C++ atomics, from basic to advanced](https://www.youtube.com/watch?v=ZQFzMfHIxng)
+* [Golang SingleFlight](https://github.com/golang/sync/blob/master/singleflight/singleflight.go)
+* [Golang WaitGroup](https://github.com/golang/go/blob/master/src/sync/waitgroup.go)

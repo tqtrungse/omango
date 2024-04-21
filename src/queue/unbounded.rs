@@ -29,9 +29,9 @@ use omango_util::{
     hint::{likely, unlikely},
 };
 
-use crate::queue::{
-    bounded::{Bounded, SpscBounded, MpmcBounded},
+use crate::{
     error::{RecvError, SendError, TrySendError},
+    queue::bounded::{Bounded, SpscBounded, MpmcBounded},
 };
 
 const SUB_QUEUE_SIZE: u32 = 1024;

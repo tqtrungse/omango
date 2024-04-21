@@ -3,10 +3,12 @@ use std::{
     cell::UnsafeCell,
 };
 
-use crate::queue::{
-    waker::Checker,
-    unbounded::SpscUnbounded,
-    bounded::{Bounded, SpscBounded},
+use crate::{
+    queue::{
+        waker::Checker,
+        unbounded::SpscUnbounded,
+        bounded::{Bounded, SpscBounded},
+    },
     error::{SendError, RecvError, TrySendError, TryRecvError},
 };
 
@@ -116,7 +118,7 @@ impl<T: Send> BSender<T> {
     ///
     /// ```
     /// use omango::queue::spsc::bounded;
-    /// use omango::queue::error::TrySendError;
+    /// use omango::error::TrySendError;
     ///
     /// let (tx, rx) = bounded(0);
     ///
@@ -146,7 +148,7 @@ impl<T: Send> BSender<T> {
     /// use std::time::Duration;
     ///
     /// use omango::queue::spsc::bounded;
-    /// use omango::queue::error::SendError;
+    /// use omango::error::SendError;
     ///
     /// let (tx, rx) = bounded(0);
     /// assert_eq!(tx.send(1), Ok(()));
@@ -174,7 +176,7 @@ impl<T: Send> BSender<T> {
     /// use std::time::Duration;
     ///
     /// use omango::queue::spsc::bounded;
-    /// use omango::queue::error::{RecvError, SendError};
+    /// use omango::error::{RecvError, SendError};
     ///
     /// let (tx, rx) = bounded(0);
     /// let tx2 = tx.clone();
@@ -205,7 +207,7 @@ impl<T: Send> BSender<T> {
     /// use std::time::Duration;
     ///
     /// use omango::queue::spsc::bounded;
-    /// use omango::queue::error::{RecvError, SendError};
+    /// use omango::error::{RecvError, SendError};
     ///
     /// let (tx, rx) = bounded(0);
     ///
@@ -236,7 +238,7 @@ impl<T: Send> BSender<T> {
     /// use std::time::Duration;
     ///
     /// use omango::queue::spsc::bounded;
-    /// use omango::queue::error::{RecvError, SendError};
+    /// use omango::error::{RecvError, SendError};
     ///
     /// let (tx, rx) = bounded::<i32>(0);
     ///
@@ -304,7 +306,7 @@ impl<T: Send> BReceiver<T> {
     ///
     /// ```
     /// use omango::queue::spsc::bounded;
-    /// use omango::queue::error::TryRecvError;
+    /// use omango::error::TryRecvError;
     ///
     /// let (tx, rx) = bounded(1);
     /// assert_eq!(rx.try_recv(), Err(TryRecvError));
@@ -335,7 +337,7 @@ impl<T: Send> BReceiver<T> {
     /// use std::time::Duration;
     ///
     /// use omango::queue::spsc::bounded;
-    /// use omango::queue::error::RecvError;
+    /// use omango::error::RecvError;
     ///
     /// let (tx, rx) = bounded(1);
     ///
@@ -363,7 +365,7 @@ impl<T: Send> BReceiver<T> {
     /// use std::time::Duration;
     ///
     /// use omango::queue::spsc::bounded;
-    /// use omango::queue::error::{RecvError, SendError};
+    /// use omango::error::{RecvError, SendError};
     ///
     /// let (tx, rx) = bounded(0);
     /// let tx2 = tx.clone();
@@ -394,7 +396,7 @@ impl<T: Send> BReceiver<T> {
     /// use std::time::Duration;
     ///
     /// use omango::queue::spsc::bounded;
-    /// use omango::queue::error::{RecvError, SendError};
+    /// use omango::error::{RecvError, SendError};
     ///
     /// let (tx, rx) = bounded(0);
     ///
@@ -425,7 +427,7 @@ impl<T: Send> BReceiver<T> {
     /// use std::time::Duration;
     ///
     /// use omango::queue::spsc::bounded;
-    /// use omango::queue::error::{RecvError, SendError};
+    /// use omango::error::{RecvError, SendError};
     ///
     /// let (tx, rx) = bounded::<i32>(0);
     ///
@@ -554,7 +556,7 @@ impl<T: Send> USender<T> {
     /// use std::time::Duration;
     ///
     /// use omango::queue::spsc::unbounded;
-    /// use omango::queue::error::{RecvError, SendError};
+    /// use omango::error::{RecvError, SendError};
     ///
     /// let (tx, rx) = unbounded();
     ///
@@ -629,7 +631,7 @@ impl<T: Send> UReceiver<T> {
     /// use std::time::Duration;
     ///
     /// use omango::queue::spsc::unbounded;
-    /// use omango::queue::error::RecvError;
+    /// use omango::error::RecvError;
     ///
     /// let (tx, rx) = unbounded();
     ///
@@ -661,7 +663,7 @@ impl<T: Send> UReceiver<T> {
     /// use std::time::Duration;
     ///
     /// use omango::queue::spsc::unbounded;
-    /// use omango::queue::error::{RecvError, SendError};
+    /// use omango::error::{RecvError, SendError};
     ///
     /// let (tx, rx) = unbounded();
     ///
