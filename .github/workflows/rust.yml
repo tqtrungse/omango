@@ -21,7 +21,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Setup | Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@main
       - name: Setup | Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -40,7 +40,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Setup | Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@main
       - name: Setup | Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -62,7 +62,7 @@ jobs:
       - name: Test in FreeBSD
         uses: vmactions/freebsd-vm@v1
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@main
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -85,7 +85,7 @@ jobs:
     needs: [compile]
     steps:
       - name: Setup | Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@main
       - name: Setup | Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
