@@ -29,13 +29,13 @@ use ringbuf::{
 
 #[allow(unused)]
 fn omango_spsc_block() {
-    let (tx, rx) = omango::queue::spsc::bounded(1023);
+    let (tx, rx) = omango::queue::spsc::bounded(1024);
     let thread = thread::spawn(move || {
-        for _ in 0..2000 {
+        for _ in 0..10240 {
             assert_eq!(tx.send(1), Ok(()));
         }
     });
-    for _ in 0..2000 {
+    for _ in 0..10240 {
         assert_eq!(rx.recv(), Ok(1));
     }
     thread.join().unwrap();
@@ -43,9 +43,9 @@ fn omango_spsc_block() {
 
 #[allow(unused)]
 fn omango_spsc_nonblock() {
-    let (tx, rx) = omango::queue::spsc::bounded(1023);
+    let (tx, rx) = omango::queue::spsc::bounded(1024);
     let thread = thread::spawn(move || {
-        for _ in 0..2000 {
+        for _ in 0..102400 {
             loop {
                 match tx.try_send(1) {
                     Ok(()) => break,
@@ -54,7 +54,7 @@ fn omango_spsc_nonblock() {
             }
         }
     });
-    for _ in 0..2000 {
+    for _ in 0..102400 {
         loop {
             match rx.try_recv() {
                 Ok(v) => {
@@ -72,11 +72,11 @@ fn omango_spsc_nonblock() {
 fn omango_spsc_unbounded() {
     let (tx, rx) = omango::queue::spsc::unbounded();
     let thread = thread::spawn(move || {
-        for _ in 0..2000 {
+        for _ in 0..102400 {
             tx.send(1).unwrap();
         }
     });
-    for _ in 0..2000 {
+    for _ in 0..102400 {
         assert_eq!(rx.recv(), Ok(1));
     }
     thread.join().unwrap();
@@ -84,20 +84,20 @@ fn omango_spsc_unbounded() {
 
 #[allow(unused)]
 fn omango_mpsc_block() {
-    let (tx, rx) = omango::queue::mpmc::bounded(1023);
+    let (tx, rx) = omango::queue::mpmc::bounded(1024);
     let nthreads = (2 * num_cpus::get()) - 2;
     let mut sending_threads = Vec::new();
 
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 assert_eq!(txc.send(1), Ok(()));
             }
         });
         sending_threads.push(thread);
     }
-    for _ in 0..nthreads * 1000 {
+    for _ in 0..nthreads * 1024 {
         assert_eq!(rx.recv(), Ok(1));
     }
     for thread in sending_threads {
@@ -107,14 +107,14 @@ fn omango_mpsc_block() {
 
 #[allow(unused)]
 fn omango_mpsc_nonblock() {
-    let (tx, rx) = omango::queue::mpmc::bounded(1023);
+    let (tx, rx) = omango::queue::mpmc::bounded(1024);
     let nthreads = (2 * num_cpus::get()) - 2;
     let mut sending_threads = Vec::new();
 
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 loop {
                     match txc.try_send(1) {
                         Ok(()) => break,
@@ -128,7 +128,7 @@ fn omango_mpsc_nonblock() {
         });
         sending_threads.push(thread);
     }
-    for _ in 0..nthreads * 1000 {
+    for _ in 0..nthreads * 1024 {
         loop {
             match rx.try_recv() {
                 Ok(v) => {
@@ -149,7 +149,7 @@ fn omango_mpsc_nonblock() {
 
 #[allow(unused)]
 fn omango_mpmc_block() {
-    let (tx, rx) = omango::queue::mpmc::bounded(1023);
+    let (tx, rx) = omango::queue::mpmc::bounded(1024);
     let nthreads = num_cpus::get() - 1;
     let mut sending_threads = Vec::new();
     let mut receiving_threads = Vec::new();
@@ -157,7 +157,7 @@ fn omango_mpmc_block() {
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 assert_eq!(txc.send(1), Ok(()));
             }
         });
@@ -167,7 +167,7 @@ fn omango_mpmc_block() {
     for _ in 0..nthreads {
         let rxc = rx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 assert_eq!(rxc.recv(), Ok(1));
             }
         });
@@ -184,7 +184,7 @@ fn omango_mpmc_block() {
 
 #[allow(unused)]
 fn omango_mpmc_nonblock() {
-    let (tx, rx) = omango::queue::mpmc::bounded(1023);
+    let (tx, rx) = omango::queue::mpmc::bounded(1024);
     let nthreads = num_cpus::get() - 1;
     let mut sending_threads = Vec::new();
     let mut receiving_threads = Vec::new();
@@ -192,7 +192,7 @@ fn omango_mpmc_nonblock() {
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 loop {
                     match txc.try_send(1) {
                         Ok(()) => break,
@@ -210,7 +210,7 @@ fn omango_mpmc_nonblock() {
     for _ in 0..nthreads {
         let rxc = rx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 loop {
                     match rxc.try_recv() {
                         Ok(v) => {
@@ -246,7 +246,7 @@ fn omango_mpmc_unbounded() {
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 assert_eq!(txc.send(1), Ok(()));
             }
         });
@@ -256,7 +256,7 @@ fn omango_mpmc_unbounded() {
     for _ in 0..nthreads {
         let rxc = rx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 assert_eq!(rxc.recv(), Ok(1));
             }
         });
@@ -275,21 +275,21 @@ fn omango_mpmc_unbounded() {
 fn std_spsc_block() {
     let (tx, rx) = std::sync::mpsc::sync_channel(1024);
     let thread = thread::spawn(move || {
-        for _ in 0..2000 {
+        for _ in 0..10240 {
             assert_eq!(tx.send(1), Ok(()));
         }
     });
-    for _ in 0..2000 {
+    for _ in 0..10240 {
         assert_eq!(rx.recv(), Ok(1));
     }
     thread.join().unwrap();
 }
 
 #[allow(unused)]
-fn std_spsc_noblock() {
+fn std_spsc_nonblock() {
     let (tx, rx) = std::sync::mpsc::sync_channel(1024);
     let thread = thread::spawn(move || {
-        for _ in 0..2000 {
+        for _ in 0..102400 {
             loop {
                 match tx.try_send(1) {
                     Ok(()) => break,
@@ -298,7 +298,7 @@ fn std_spsc_noblock() {
             }
         }
     });
-    for _ in 0..2000 {
+    for _ in 0..102400 {
         loop {
             match rx.try_recv() {
                 Ok(v) => {
@@ -321,13 +321,13 @@ fn std_mpsc_block() {
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 assert_eq!(txc.send(1), Ok(()));
             }
         });
         sending_threads.push(thread);
     }
-    for _ in 0..nthreads * 1000 {
+    for _ in 0..nthreads * 1024 {
         assert_eq!(rx.recv(), Ok(1));
     }
     for thread in sending_threads {
@@ -344,7 +344,7 @@ fn std_mpsc_nonblock() {
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 loop {
                     match txc.try_send(1) {
                         Ok(()) => break,
@@ -358,7 +358,7 @@ fn std_mpsc_nonblock() {
         });
         sending_threads.push(thread);
     }
-    for _ in 0..nthreads * 1000 {
+    for _ in 0..nthreads * 1024 {
         loop {
             match rx.try_recv() {
                 Ok(v) => {
@@ -381,11 +381,11 @@ fn std_mpsc_nonblock() {
 fn flume_spsc_block() {
     let (tx, rx) = flume::bounded(1024);
     let thread = thread::spawn(move || {
-        for _ in 1..2000 {
+        for _ in 1..10240 {
             assert_eq!(tx.send(1), Ok(()));
         }
     });
-    for _ in 1..2000 {
+    for _ in 1..10240 {
         assert_eq!(rx.recv(), Ok(1));
     }
     thread.join().unwrap();
@@ -395,7 +395,7 @@ fn flume_spsc_block() {
 fn flume_spsc_nonblock() {
     let (tx, rx) = flume::bounded(1024);
     let thread = thread::spawn(move || {
-        for _ in 0..2000 {
+        for _ in 0..102400 {
             loop {
                 match tx.try_send(1) {
                     Ok(()) => break,
@@ -404,7 +404,7 @@ fn flume_spsc_nonblock() {
             }
         }
     });
-    for _ in 0..2000 {
+    for _ in 0..102400 {
         loop {
             match rx.try_recv() {
                 Ok(v) => {
@@ -427,13 +427,13 @@ fn flume_mpsc_block() {
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..10240 {
                 assert_eq!(txc.send(1), Ok(()));
             }
         });
         sending_threads.push(thread);
     }
-    for _ in 0..nthreads * 1000 {
+    for _ in 0..nthreads * 10240 {
         assert_eq!(rx.recv(), Ok(1));
     }
     for thread in sending_threads {
@@ -450,7 +450,7 @@ fn flume_mpsc_nonblock() {
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 loop {
                     match txc.try_send(1) {
                         Ok(()) => break,
@@ -464,7 +464,7 @@ fn flume_mpsc_nonblock() {
         });
         sending_threads.push(thread);
     }
-    for _ in 0..nthreads * 1000 {
+    for _ in 0..nthreads * 1024 {
         loop {
             match rx.try_recv() {
                 Ok(v) => {
@@ -493,7 +493,7 @@ fn flume_mpmc_block() {
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 assert_eq!(txc.send(1), Ok(()));
             }
         });
@@ -503,7 +503,7 @@ fn flume_mpmc_block() {
     for _ in 0..nthreads {
         let rxc = rx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 assert_eq!(rxc.recv(), Ok(1));
             }
         });
@@ -528,7 +528,7 @@ fn flume_mpmc_nonblock() {
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 loop {
                     match txc.try_send(1) {
                         Ok(()) => break,
@@ -546,7 +546,7 @@ fn flume_mpmc_nonblock() {
     for _ in 0..nthreads {
         let rxc = rx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 loop {
                     match rxc.try_recv() {
                         Ok(v) => {
@@ -574,13 +574,13 @@ fn flume_mpmc_nonblock() {
 
 #[allow(unused)]
 fn crossbeam_spsc_block() {
-    let (tx, rx) = crossbeam_channel::bounded(1023);
+    let (tx, rx) = crossbeam_channel::bounded(1024);
     let thread = thread::spawn(move || {
-        for _ in 1..2000 {
+        for _ in 1..10240 {
             assert_eq!(tx.send(1), Ok(()));
         }
     });
-    for _ in 1..2000 {
+    for _ in 1..10240 {
         assert_eq!(rx.recv(), Ok(1));
     }
     thread.join().unwrap();
@@ -588,9 +588,9 @@ fn crossbeam_spsc_block() {
 
 #[allow(unused)]
 fn crossbeam_spsc_nonblock() {
-    let (tx, rx) = crossbeam_channel::bounded(1023);
+    let (tx, rx) = crossbeam_channel::bounded(1024);
     let thread = thread::spawn(move || {
-        for _ in 0..2000 {
+        for _ in 0..102400 {
             loop {
                 match tx.try_send(1) {
                     Ok(()) => break,
@@ -599,7 +599,7 @@ fn crossbeam_spsc_nonblock() {
             }
         }
     });
-    for _ in 0..2000 {
+    for _ in 0..102400 {
         loop {
             match rx.try_recv() {
                 Ok(v) => {
@@ -617,11 +617,11 @@ fn crossbeam_spsc_nonblock() {
 fn crossbeam_spsc_unbounded() {
     let (tx, rx) = crossbeam_channel::unbounded();
     let thread = thread::spawn(move || {
-        for _ in 1..2000 {
+        for _ in 1..102400 {
             assert_eq!(tx.send(1), Ok(()));
         }
     });
-    for _ in 1..2000 {
+    for _ in 1..102400 {
         assert_eq!(rx.recv(), Ok(1));
     }
     thread.join().unwrap();
@@ -629,20 +629,20 @@ fn crossbeam_spsc_unbounded() {
 
 #[allow(unused)]
 fn crossbeam_mpsc_block() {
-    let (tx, rx) = crossbeam_channel::bounded(1023);
+    let (tx, rx) = crossbeam_channel::bounded(1024);
     let nthreads = (2 * num_cpus::get()) - 2;
     let mut sending_threads = Vec::new();
 
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 assert_eq!(txc.send(1), Ok(()));
             }
         });
         sending_threads.push(thread);
     }
-    for _ in 0..nthreads * 1000 {
+    for _ in 0..nthreads * 1024 {
         assert_eq!(rx.recv(), Ok(1));
     }
     for thread in sending_threads {
@@ -652,14 +652,14 @@ fn crossbeam_mpsc_block() {
 
 #[allow(unused)]
 fn crossbeam_mpsc_nonblock() {
-    let (tx, rx) = crossbeam_channel::bounded(1023);
+    let (tx, rx) = crossbeam_channel::bounded(1024);
     let nthreads = (2 * num_cpus::get()) - 2;
     let mut sending_threads = Vec::new();
 
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 loop {
                     match txc.try_send(1) {
                         Ok(()) => break,
@@ -673,7 +673,7 @@ fn crossbeam_mpsc_nonblock() {
         });
         sending_threads.push(thread);
     }
-    for _ in 0..nthreads * 1000 {
+    for _ in 0..nthreads * 1024 {
         loop {
             match rx.try_recv() {
                 Ok(v) => {
@@ -694,7 +694,7 @@ fn crossbeam_mpsc_nonblock() {
 
 #[allow(unused)]
 fn crossbeam_mpmc_block() {
-    let (tx, rx) = crossbeam_channel::bounded(1023);
+    let (tx, rx) = crossbeam_channel::bounded(1024);
     let nthreads = num_cpus::get() - 1;
     let mut sending_threads = Vec::new();
     let mut receiving_threads = Vec::new();
@@ -702,7 +702,7 @@ fn crossbeam_mpmc_block() {
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 assert_eq!(txc.send(1), Ok(()));
             }
         });
@@ -712,7 +712,7 @@ fn crossbeam_mpmc_block() {
     for _ in 0..nthreads {
         let rxc = rx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 assert_eq!(rxc.recv(), Ok(1));
             }
         });
@@ -729,7 +729,7 @@ fn crossbeam_mpmc_block() {
 
 #[allow(unused)]
 fn crossbeam_mpmc_nonblock() {
-    let (tx, rx) = crossbeam_channel::bounded(1023);
+    let (tx, rx) = crossbeam_channel::bounded(1024);
     let nthreads = num_cpus::get() - 1;
     let mut sending_threads = Vec::new();
     let mut receiving_threads = Vec::new();
@@ -737,7 +737,7 @@ fn crossbeam_mpmc_nonblock() {
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 loop {
                     match txc.try_send(1) {
                         Ok(()) => break,
@@ -755,7 +755,7 @@ fn crossbeam_mpmc_nonblock() {
     for _ in 0..nthreads {
         let rxc = rx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 loop {
                     match rxc.try_recv() {
                         Ok(v) => {
@@ -791,7 +791,7 @@ fn crossbeam_mpmc_unbounded() {
     for _ in 0..nthreads {
         let txc = tx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 assert_eq!(txc.send(1), Ok(()));
             }
         });
@@ -801,7 +801,7 @@ fn crossbeam_mpmc_unbounded() {
     for _ in 0..nthreads {
         let rxc = rx.clone();
         let thread = thread::spawn(move || {
-            for _ in 0..1000 {
+            for _ in 0..1024 {
                 assert_eq!(rxc.recv(), Ok(1));
             }
         });
@@ -820,7 +820,7 @@ fn crossbeam_mpmc_unbounded() {
 fn rtrb_spsc_nonblock() {
     let (mut tx, mut rx) = rtrb::RingBuffer::new(1024);
     let thread = thread::spawn(move || {
-        for _ in 1..2000 {
+        for _ in 1..102400 {
             loop {
                 match tx.push(1) {
                     Ok(()) => break,
@@ -829,7 +829,7 @@ fn rtrb_spsc_nonblock() {
             }
         }
     });
-    for _ in 1..2000 {
+    for _ in 1..102400 {
         loop {
             match rx.pop() {
                 Ok(v) => {
@@ -848,7 +848,7 @@ fn ringbuf_spsc_nonblock() {
     let rb = HeapRb::<i32>::new(1024);
     let (mut tx, mut rx) = rb.split();
     let thread = thread::spawn(move || {
-        for _ in 1..2000 {
+        for _ in 1..102400 {
             loop {
                 match tx.try_push(1) {
                     Ok(()) => break,
@@ -857,7 +857,7 @@ fn ringbuf_spsc_nonblock() {
             }
         }
     });
-    for _ in 1..2000 {
+    for _ in 1..102400 {
         loop {
             match rx.try_pop() {
                 Some(v) => {
@@ -892,11 +892,11 @@ fn bench_spsc_nonblock(c: &mut Criterion) {
     let mut group = c.benchmark_group("SPSC-Nonblock");
     for i in 0u64..3u64 {
         group.bench_function(BenchmarkId::new("Standard", i),
-                             |b| b.iter(std_spsc_block));
+                             |b| b.iter(std_spsc_nonblock));
         group.bench_function(BenchmarkId::new("Flume", i),
-                             |b| b.iter(flume_spsc_block));
+                             |b| b.iter(flume_spsc_nonblock));
         group.bench_function(BenchmarkId::new("Crossbeam", i),
-                             |b| b.iter(crossbeam_spsc_block));
+                             |b| b.iter(crossbeam_spsc_nonblock));
         group.bench_function(BenchmarkId::new("Rtrb", i),
                              |b| b.iter(rtrb_spsc_nonblock));
         group.bench_function(BenchmarkId::new("Ringbuf", i),
@@ -991,5 +991,5 @@ fn bench_mpmc_unbounded(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_mpmc_block);
+criterion_group!(benches, bench_spsc_block);
 criterion_main!(benches);
