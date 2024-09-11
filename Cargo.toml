@@ -20,8 +20,8 @@ crossbeam-channel = "0.5.11"
 criterion = { version = "0.5.1", features = ["default", "stable"] }
 
 [dependencies]
-parking_lot = "0.12.1"
-omango-util = "0.1.5"
+parking_lot = "0.12.3"
+omango-util = "0.1.6"
 omango-futex = "0.1.2"
 
 [[bench]]

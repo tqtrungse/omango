@@ -31,7 +31,7 @@ use std::{
     },
 };
 
-use omango_util::lock::Spinlock;
+use omango_util::lock::RwSpinlock;
 
 use crate::{
     wg::WaitGroup,
@@ -74,14 +74,14 @@ impl<T: Any> Default for Call<T> {
 /// [Group] represents a struct of work and forms a namespace in
 /// which units of work can be executed with duplicate suppression.
 pub struct Group {
-    guard: Spinlock<HashMap<String, Rc<dyn Any>>>,
+    guard: RwSpinlock<HashMap<String, Rc<dyn Any>>>,
 }
 
 impl Default for Group {
     #[inline(always)]
     fn default() -> Self {
         Self {
-            guard: Spinlock::new(HashMap::default()),
+            guard: RwSpinlock::new(HashMap::default()),
         }
     }
 }
@@ -141,7 +141,7 @@ impl Group {
                 let oc = Rc::<Call<T>>::default();
                 let call = oc.clone();
                 oc.wg.add(1);
-                self.guard.lock().insert(key.to_string(), oc);
+                self.guard.write().insert(key.to_string(), oc);
 
                 let result = panic::catch_unwind(|| {
                     func()
@@ -172,13 +172,13 @@ impl Group {
     /// [`exec`]: Group::exec
     #[inline(always)]
     pub fn forgot(&self, key: &str) -> bool {
-        self.guard.lock().remove(key).is_some()
+        self.guard.write().remove(key).is_some()
     }
 
     #[allow(clippy::map_clone)]
     #[inline(always)]
     fn get(&self, key: &str) -> Option<Rc<dyn Any>> {
-        self.guard.lock().get(key).map(|v| v.clone())
+        self.guard.read().get(key).map(|v| v.clone())
     }
 }
 
