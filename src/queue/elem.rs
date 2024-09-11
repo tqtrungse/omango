@@ -40,7 +40,6 @@ impl<T> Default for ElemArr<T> {
     }
 }
 
-/// Element for unbounded queue.
 impl<T> ElemArr<T> {
     #[inline(always)]
     pub(crate) fn load_lap(&self) -> u32 {
@@ -49,7 +48,9 @@ impl<T> ElemArr<T> {
 
     #[inline(always)]
     pub(crate) fn write(&self, lap: u32, msg: T) {
-        unsafe { self.msg.get().write(MaybeUninit::new(msg)); }
+        unsafe { 
+            self.msg.get().write(MaybeUninit::new(msg)); 
+        }
         // Make the element available for reading.
         self.lap.store(lap, Ordering::Release);
     }
@@ -58,7 +59,9 @@ impl<T> ElemArr<T> {
     pub(crate) fn read(&self, lap: u32) -> T {
         // We own the element, do non-atomic read and remove.
         let msg: T;
-        unsafe { msg = self.msg.get().read().assume_init(); }
+        unsafe { 
+            msg = self.msg.get().read().assume_init(); 
+        }
 
         // Make the element available for writing.
         self.lap.store(lap, Ordering::Release);
@@ -68,5 +71,26 @@ impl<T> ElemArr<T> {
     #[inline(always)]
     pub(crate) fn atom_lap(&self) -> *const AtomicU32 {
         &self.lap
+    }
+}
+
+impl<T> Drop for ElemArr<T> {
+    /// Because [`MaybeUninit`] will not drop contained data, we need to manually drop.
+    /// 
+    /// The concurrent queues don't provide `drop` function, [`ElemArr`] is dropped
+    /// if and only if the queues are out of scope (aka automatically dropped).
+    /// 
+    /// It is not thread safe, so it is your responsibility to make sure that there are 
+    /// no any operations in the queues at the dropped time. 
+    /// 
+    /// [`MaybeUninit`]: MaybeUninit
+    /// [`ElemArr`]: elem::ElemArr
+    fn drop(&mut self) {
+        unsafe {
+            let raw_data = self.msg.get_mut().as_mut_ptr();
+            if !raw_data.is_null() {
+                std::ptr::drop_in_place(raw_data);
+            }
+        }
     }
 }

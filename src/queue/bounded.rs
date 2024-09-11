@@ -273,7 +273,7 @@ impl<T> Bounded<T> for SpscBounded<T> {
                     if lap > elem.load_lap() {
                         return (elem, elem_lap, State::Failed);
                     }
-                    // The element has already been read on this lap,
+                    // The element has already been read on this lap;
                     // this means that `read operation` has been changed as well,
                     // retry.
                     backoff.spin();
@@ -308,11 +308,11 @@ impl<T> Bounded<T> for SpscBounded<T> {
                     return (elem, elem_lap, true);
                 },
                 std::cmp::Ordering::Greater => {
-                    // The element is not yet write on the previous lap.
+                    // The element is not yet written on the previous lap.
                     if lap > elem.load_lap() {
                         return (elem, elem_lap, false);
                     }
-                    // The element has already been written on this lap,
+                    // The element has already been written on this lap;
                     // this means that `send operation` has been changed as well,
                     // retry.
                     backoff.spin();
@@ -495,7 +495,7 @@ impl<T> Bounded<T> for MpmcBounded<T> {
                     if lap > elem.load_lap() {
                         return (elem, elem_lap, State::Failed);
                     }
-                    // The element has already been read on this lap,
+                    // The element has already been read on this lap;
                     // this means that `read operation` has been changed as well,
                     // retry.
                     backoff.spin();
@@ -505,7 +505,7 @@ impl<T> Bounded<T> for MpmcBounded<T> {
                     // Snooze because we need to wait for the stamp to get updated.
                     backoff.snooze();
 
-                    // The element has already been read on this lap,
+                    // The element has already been read on this lap;
                     // this means that `read operation` has been changed as well,
                     // retry.
                     meta = self.write_meta.load(Ordering::Relaxed);
@@ -548,11 +548,11 @@ impl<T> Bounded<T> for MpmcBounded<T> {
                     }
                 },
                 std::cmp::Ordering::Greater => {
-                    // The element is not yet write on the previous lap.
+                    // The element is not yet written on the previous lap.
                     if lap > elem.load_lap() {
                         return (elem, elem_lap, false);
                     }
-                    // The element has already been written on this lap,
+                    // The element has already been written on this lap;
                     // this means that `send operation` has been changed as well,
                     // retry.
                     backoff.spin();
@@ -562,7 +562,7 @@ impl<T> Bounded<T> for MpmcBounded<T> {
                     // Snooze because we need to wait for the stamp to get updated.
                     backoff.snooze();
 
-                    // The element has already been written on this lap,
+                    // The element has already been written on this lap;
                     // this means that `send operation` has been changed as well,
                     // retry.
                     meta = self.read_meta.load(Ordering::Relaxed);

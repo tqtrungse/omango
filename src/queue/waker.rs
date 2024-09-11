@@ -139,7 +139,7 @@ impl Metadata {
 
     /// Wakes up one waiter from the queue.
     ///
-    /// It doesn't remove waiter.
+    /// It doesn't remove the waiter.
     #[inline]
     fn notify(&mut self) {
         if likely(self.start < self.waiters.len()) {
@@ -198,7 +198,7 @@ impl Waker {
     /// This thing will help to avoid lost wakeup.
     ///
     /// Returns `False` if bucket is ready or queue is closed.
-    /// Returns `True` if bucket is not ready and the queue is still opened.
+    /// Returns `True` if the bucket is not ready and the queue is still opened.
     #[inline]
     pub(crate) fn register(&self, waiter: &Waiter) -> bool {
         let mut inner = self.guard.lock();
@@ -227,7 +227,7 @@ impl Waker {
 
     /// Wakes up one waiter from the queue.
     ///
-    /// It doesn't remove waiter.
+    /// It doesn't remove the waiter.
     #[inline(always)]
     pub(crate) fn wake(&self) {
         if unlikely(!self.empty.load(Ordering::SeqCst)) {
