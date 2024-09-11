@@ -170,7 +170,7 @@ impl<T> SpscUnbounded<T> {
         let head = self.head.get();
         let result = unsafe { (*head).queue.recv((*head).queue.cast()) };
         if likely(result.is_ok()) {
-            return Ok(result.unwrap());
+            return result;
         }
 
         if unlikely(self.closed.load(Ordering::Relaxed)) {
@@ -188,7 +188,7 @@ impl<T> SpscUnbounded<T> {
         // Deallocate previous node.
         let _ = unsafe { Box::from_raw(head) };
 
-        Ok(unsafe { (*next).queue.recv((*next).queue.cast()).unwrap() })
+        Ok(unsafe { (*next).queue.recv((*next).queue.cast())? })
     }
 
     pub(crate) fn close(&self) {
@@ -297,7 +297,7 @@ impl<T> MpmcUnbounded<T> {
             let head = self.head.load(Ordering::Relaxed);
             let result = unsafe { (*head).queue.recv((*head).queue.cast()) };
             if likely(result.is_ok()) {
-                return Ok(result.unwrap());
+                return result;
             }
 
             if unlikely(self.closed.load(Ordering::Relaxed)) {

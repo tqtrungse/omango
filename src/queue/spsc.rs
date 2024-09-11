@@ -18,7 +18,7 @@ use crate::{
 ///
 /// A special case is zero-capacity queue, which cannot hold any messages.
 /// Instead, send and receive operations must appear at the same time
-/// in order to pair up and pass the message over.
+/// to pair up and pass the message over.
 ///
 /// # Examples
 ///
@@ -478,7 +478,7 @@ pub fn unbounded<T: Send>() -> (USender<T>, UReceiver<T>) {
     (USender::new(queue.clone()), UReceiver::new(queue))
 }
 
-/// The sending side of unbounded queue.
+/// The sending side of the unbounded queue.
 ///
 /// # Examples
 ///
@@ -518,7 +518,7 @@ impl<T: Send> USender<T> {
 
     /// Attempts to send a message into the queue without blocking.
     /// 
-    /// This operation will be failed when queue was closed.
+    /// This operation will be failed when the queue was closed.
     /// 
     /// # Examples
     ///
@@ -577,7 +577,7 @@ impl<T: Send> USender<T> {
     }
 }
 
-/// The receiving side of unbounded queue.
+/// The receiving side of the unbounded queue.
 ///
 /// # Examples
 ///
@@ -621,7 +621,7 @@ impl<T: Send> UReceiver<T> {
 
     /// Blocks the current thread until a message is received.
     ///
-    /// When queue was closed, all receiving waiters will be woken up and
+    /// When the queue was closed, all receiving waiters will be woken up and
     /// return error.
     /// 
     /// # Examples

@@ -78,11 +78,11 @@ impl<T: Any> AsMut<T> for Response {
 
 /// A [`Group`] waits for a collection of sources to complete.
 /// After creating, the main thread or sub-thread calls [`add`] 
-/// to add collecting source. 
+/// to add a collecting source. 
 /// 
-/// Then main thread calls [`sum`] to wait until finished.
+/// Then the main thread calls [`sum`] to wait until finished.
 /// 
-/// A call to [`get`] to retrieve response from specific source.
+/// A call to [`get`] to retrieve response from a specific source.
 ///
 /// A [`Group`] must not be copied after first use.
 ///
@@ -102,7 +102,7 @@ pub struct Group {
 impl Group {
     /// [`new`] creates a new [`Group`].
     ///
-    /// The `n` params is number of sources need to collect.
+    /// The `n` params is a number of sources need to collect.
     #[inline]
     pub fn new(n: u32) -> Self {
         let calls: Box<[Call]> =
@@ -119,7 +119,8 @@ impl Group {
 
     /// [`add`] inserts a new source need to collect to [`Group`].
     ///
-    /// The `key` param is the name of source. It has to unique.
+    /// The `key` param is the name of source.
+    /// It has to be unique.
     /// The `func` param is a collected function is defined by user.
     ///
     ///
@@ -148,7 +149,7 @@ impl Group {
         self.wg.done();
     }
 
-    /// [`get`] returns result from the specific source.
+    /// [`get`] a return result from the specific source.
     /// If user call [`get`] over registered times, will be
     /// panicked.
     /// 
@@ -214,7 +215,7 @@ impl Group {
 
     /// [`reset`] clear all properties.
     /// All previous data will be destroyed. 
-    /// Only calls [`reset`] after [`sum`] finished unless
+    /// Only calls [`reset`] after [`sum`] finished unless it 
     /// will lead to unpredictable errors.
     /// 
     /// [`sum`]: Group::sum
