@@ -229,7 +229,7 @@ impl Waker {
     ///
     /// It doesn't remove the waiter.
     #[inline(always)]
-    pub(crate) fn wake(&self) {
+    pub(crate) fn wake_one(&self) {
         if unlikely(!self.empty.load(Ordering::SeqCst)) {
             self.guard.lock().notify();
         }

@@ -56,7 +56,7 @@ pub(crate) trait Bounded<T> {
 
         if likely(state == State::Success) {
             elem.write(lap.wrapping_add(1), msg);
-            self.wake_reader();
+            self.wake_one_reader_if_any();
             Ok(())
         } else if unlikely(state == State::Closed) {
             Err(TrySendError::Disconnected(msg))
@@ -75,7 +75,7 @@ pub(crate) trait Bounded<T> {
             return Err(TryRecvError);
         }
         let msg = elem.read(lap.wrapping_add(1));
-        self.wake_writer();
+        self.wake_one_writer_if_any();
         Ok(msg)
     }
 
@@ -89,7 +89,7 @@ pub(crate) trait Bounded<T> {
 
             if likely(state == State::Success) {
                 elem.write(lap.wrapping_add(1), msg);
-                self.wake_reader();
+                self.wake_one_reader_if_any();
                 return Ok(());
             } else if unlikely(state == State::Closed) {
                 return Err(SendError(msg));
@@ -124,7 +124,7 @@ pub(crate) trait Bounded<T> {
             let (elem, lap, success) = self.select_bucket_4_recv();
             if likely(success) {
                 let msg = elem.read(lap.wrapping_add(1));
-                self.wake_writer();
+                self.wake_one_writer_if_any();
                 return Ok(msg);
             } else if unlikely(state == State::Closed) {
                 return Err(RecvError);
@@ -171,9 +171,9 @@ pub(crate) trait Bounded<T> {
 
     fn unregister_reader_waiter(&self, waiter: &Waiter);
 
-    fn wake_reader(&self);
+    fn wake_one_reader_if_any(&self);
 
-    fn wake_writer(&self);
+    fn wake_one_writer_if_any(&self);
 
     fn cast(&self) -> &dyn Checker;
 }
@@ -346,13 +346,13 @@ impl<T> Bounded<T> for SpscBounded<T> {
     }
 
     #[inline(always)]
-    fn wake_reader(&self) {
-        self.read_waker.wake();
+    fn wake_one_reader_if_any(&self) {
+        self.read_waker.wake_one();
     }
 
     #[inline(always)]
-    fn wake_writer(&self) {
-        self.write_waker.wake();
+    fn wake_one_writer_if_any(&self) {
+        self.write_waker.wake_one();
     }
 
     #[inline(always)]
@@ -592,13 +592,13 @@ impl<T> Bounded<T> for MpmcBounded<T> {
     }
 
     #[inline(always)]
-    fn wake_reader(&self) {
-        self.read_waker.wake();
+    fn wake_one_reader_if_any(&self) {
+        self.read_waker.wake_one();
     }
 
     #[inline(always)]
-    fn wake_writer(&self) {
-        self.write_waker.wake();
+    fn wake_one_writer_if_any(&self) {
+        self.write_waker.wake_one();
     }
 
     #[inline(always)]

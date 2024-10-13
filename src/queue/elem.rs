@@ -87,10 +87,7 @@ impl<T> Drop for ElemArr<T> {
     /// [`ElemArr`]: elem::ElemArr
     fn drop(&mut self) {
         unsafe {
-            let raw_data = self.msg.get_mut().as_mut_ptr();
-            if !raw_data.is_null() {
-                std::ptr::drop_in_place(raw_data);
-            }
+            let _ = self.msg.get().read().assume_init();
         }
     }
 }
