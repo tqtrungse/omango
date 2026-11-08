@@ -86,8 +86,12 @@ impl<T> Drop for ElemArr<T> {
     /// [`MaybeUninit`]: MaybeUninit
     /// [`ElemArr`]: elem::ElemArr
     fn drop(&mut self) {
-        unsafe {
-            let _ = self.msg.get().read().assume_init();
+        // Writers claim a slot on an even lap and `write` publishes `lap + 1` (odd);
+        // `read` publishes the next even lap. So the slot holds a message iff its lap is odd:
+        // a slot that was never written (lap 0) or whose message was already read must not
+        // be dropped again.
+        if *self.lap.get_mut() & 1 == 1 {
+            unsafe { self.msg.get_mut().assume_init_drop() };
         }
     }
 }

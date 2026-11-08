@@ -809,4 +809,49 @@ mod test {
             assert_eq!(rx.recv(), Ok(1));
         }
     }
+
+    #[test]
+    fn drop_each_message_once() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        static DROPS: AtomicUsize = AtomicUsize::new(0);
+        struct Counted;
+        impl Drop for Counted {
+            fn drop(&mut self) {
+                DROPS.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+
+        // Bounded: 2 of 4 slots written, 1 received. Dropping the queue must drop only the
+        // unread message, not the received one and not the 2 slots that were never written.
+        let (tx_b, rx_b) = crate::queue::spsc::bounded(4);
+        tx_b.try_send(Counted).unwrap();
+        tx_b.try_send(Counted).unwrap();
+        drop(rx_b.try_recv().unwrap());
+        assert_eq!(DROPS.load(Ordering::SeqCst), 1);
+        drop((tx_b, rx_b));
+        assert_eq!(DROPS.load(Ordering::SeqCst), 2);
+
+        // Unbounded: 1025 messages fill the first sub-queue (1024 slots) and link a second one.
+        // Receiving past the first sub-queue frees it while the queue is still in use; it must
+        // not drop the 1024 messages that were already received.
+        DROPS.store(0, Ordering::SeqCst);
+        let (tx_u, rx_u) = crate::queue::spsc::unbounded();
+        for _ in 0..1025 {
+            tx_u.send(Counted).unwrap();
+        }
+        for _ in 0..1025 {
+            drop(rx_u.recv().unwrap());
+        }
+        assert_eq!(DROPS.load(Ordering::SeqCst), 1025);
+    }
+
+    #[test]
+    fn drop_queue_after_recv_owned_message() {
+        let (tx, rx) = crate::queue::spsc::bounded(1);
+        tx.send(String::from("hello")).unwrap();
+        assert_eq!(rx.recv().unwrap(), "hello");
+        // Used to free the received String a second time.
+        drop((tx, rx));
+    }
 }
